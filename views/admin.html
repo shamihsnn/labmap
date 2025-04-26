@@ -293,8 +293,11 @@
                         a.labName === apt.labName
                     );
                     
+                    // Common button styles
+                    const buttonStyle = "border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 5px;";
+                    
                     return `
-                        <div class="appointment-item ${apt.status}" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid ${apt.status === 'pending' ? '#ff9800' : apt.status === 'approved' ? '#4caf50' : '#f44336'}">
+                        <div class="appointment-item ${apt.status}" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid ${apt.status === 'pending' ? '#ff9800' : apt.status === 'approved' ? '#4caf50' : '#f44336'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                             <div class="appointment-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <h3 style="margin: 0; color: #333;">Appointment #${originalIndex + 1}</h3>
                                 <span class="status" style="padding: 5px 10px; border-radius: 4px; font-size: 12px; text-transform: uppercase; font-weight: bold; background-color: ${apt.status === 'pending' ? '#fff3e0' : apt.status === 'approved' ? '#e8f5e9' : '#ffebee'}; color: ${apt.status === 'pending' ? '#e65100' : apt.status === 'approved' ? '#2e7d32' : '#c62828'};">${apt.status}</span>
@@ -309,25 +312,27 @@
                                 <p><strong>Email:</strong> ${apt.email || 'Not specified'}</p>
                                 ${apt.notes ? `<p><strong>Notes:</strong> ${apt.notes}</p>` : ''}
                             </div>
-                            ${apt.status === 'pending' ? `
-                                <div class="appointment-actions" style="display: flex; gap: 10px;">
+                            <div class="appointment-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                ${apt.status === 'pending' ? `
                                     <button onclick="updateAppointment(${originalIndex}, 'approved')" 
-                                        style="background-color: #4caf50; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
-                                        Approve & Notify
+                                        style="${buttonStyle} background-color: #4caf50; color: white; box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);">
+                                        <i class="fas fa-check" style="font-size: 14px;"></i> Approve & Notify
                                     </button>
                                     <button onclick="updateAppointment(${originalIndex}, 'rejected')" 
-                                        style="background-color: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
-                                        Reject & Notify
+                                        style="${buttonStyle} background-color: #f44336; color: white; box-shadow: 0 2px 5px rgba(244, 67, 54, 0.3);">
+                                        <i class="fas fa-times" style="font-size: 14px;"></i> Reject & Notify
                                     </button>
-                                </div>
-                            ` : `
-                                <div class="appointment-actions" style="display: flex; gap: 10px;">
+                                ` : `
                                     <button onclick="resendNotification(${originalIndex})" 
-                                        style="background-color: #2196f3; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
-                                        Resend Email Notification
+                                        style="${buttonStyle} background-color: #2196f3; color: white; box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);">
+                                        <i class="fas fa-envelope" style="font-size: 14px;"></i> Resend Notification
                                     </button>
-                                </div>
-                            `}
+                                `}
+                                <button onclick="deleteAppointment(${originalIndex})" 
+                                    style="${buttonStyle} background-color: #9e9e9e; color: white; box-shadow: 0 2px 5px rgba(158, 158, 158, 0.3);">
+                                    <i class="fas fa-trash-alt" style="font-size: 14px;"></i> Delete
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -336,7 +341,122 @@
             }
         }
 
-        // Update appointment status
+        // Add a toast notification system at the top of the body element
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create toast container if it doesn't exist
+            if (!document.getElementById('toast-container')) {
+                const toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    max-width: 350px;
+                `;
+                document.body.appendChild(toastContainer);
+            }
+        });
+
+        // Function to show toast notifications
+        function showToast(message, type = 'success', duration = 3000) {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            
+            // Set styles based on type
+            let bgColor, textColor, borderColor, icon;
+            switch (type) {
+                case 'success':
+                    bgColor = '#e8f5e9';
+                    textColor = '#2e7d32';
+                    borderColor = '#4caf50';
+                    icon = '<i class="fas fa-check-circle"></i>';
+                    break;
+                case 'error':
+                    bgColor = '#ffebee';
+                    textColor = '#c62828';
+                    borderColor = '#f44336';
+                    icon = '<i class="fas fa-exclamation-circle"></i>';
+                    break;
+                case 'info':
+                    bgColor = '#e3f2fd';
+                    textColor = '#1565c0';
+                    borderColor = '#2196f3';
+                    icon = '<i class="fas fa-info-circle"></i>';
+                    break;
+                case 'warning':
+                    bgColor = '#fff3e0';
+                    textColor = '#e65100';
+                    borderColor = '#ff9800';
+                    icon = '<i class="fas fa-exclamation-triangle"></i>';
+                    break;
+            }
+            
+            // Set toast styles
+            toast.style.cssText = `
+                padding: 12px 16px;
+                background-color: ${bgColor};
+                color: ${textColor};
+                border-left: 4px solid ${borderColor};
+                border-radius: 4px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 250px;
+                max-width: 350px;
+                animation: slideIn 0.3s ease forwards;
+                opacity: 0;
+                transform: translateX(50px);
+            `;
+            
+            // Add animation keyframes
+            if (!document.getElementById('toast-animations')) {
+                const style = document.createElement('style');
+                style.id = 'toast-animations';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { opacity: 0; transform: translateX(50px); }
+                        to { opacity: 1; transform: translateX(0); }
+                    }
+                    @keyframes fadeOut {
+                        from { opacity: 1; transform: translateX(0); }
+                        to { opacity: 0; transform: translateX(50px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Set toast content
+            toast.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="font-size: 20px;">${icon}</div>
+                    <div style="flex: 1;">${message}</div>
+                </div>
+            `;
+            
+            // Add toast to container
+            toastContainer.appendChild(toast);
+            
+            // Remove toast after duration
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => {
+                    toastContainer.removeChild(toast);
+                }, 300);
+            }, duration);
+            
+            return toast;
+        }
+
+        // Update the updateAppointment function to use the new toast notifications
         async function updateAppointment(index, status) {
             try {
                 const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
@@ -344,25 +464,15 @@
                 
                 if (!appointment) {
                     console.error('Appointment not found');
+                    showToast('Appointment not found', 'error');
                     return;
                 }
                 
-                // Update status
-                appointment.status = status;
-                localStorage.setItem('appointments', JSON.stringify(appointments));
-                
-                // Send email notification
-                const resultDiv = document.getElementById('notification-result');
-                if (resultDiv) {
-                    resultDiv.style.display = 'block';
-                    resultDiv.style.color = '#3f51b5';
-                    resultDiv.style.backgroundColor = '#e8eaf6';
-                    resultDiv.style.padding = '10px';
-                    resultDiv.style.borderRadius = '4px';
-                    resultDiv.textContent = `Sending notification email to ${appointment.email}...`;
-                }
+                // Show processing toast
+                const processingToast = showToast(`Processing ${status} status for ${appointment.name || 'patient'}...`, 'info', 10000);
                 
                 try {
+                    // First, send the email notification
                     const response = await fetch('/send-appointment-email', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -377,55 +487,67 @@
                         })
                     });
                     
+                    // Check if email was sent successfully
                     const data = await response.json();
                     
-                    if (resultDiv) {
-                        if (response.ok) {
-                            resultDiv.style.color = '#4caf50';
-                            resultDiv.style.backgroundColor = '#e8f5e9';
-                            resultDiv.textContent = `Notification email sent to ${appointment.email}`;
-                        } else {
-                            resultDiv.style.color = '#f44336';
-                            resultDiv.style.backgroundColor = '#ffebee';
-                            resultDiv.textContent = `Error: ${data.error || data.message || 'Failed to send email'}`;
+                    if (response.ok) {
+                        // If email sent successfully, update the appointment status
+                        appointment.status = status;
+                        localStorage.setItem('appointments', JSON.stringify(appointments));
+                        
+                        // Remove processing toast
+                        if (processingToast && processingToast.parentNode) {
+                            processingToast.parentNode.removeChild(processingToast);
                         }
+                        
+                        // Show success toast
+                        const statusText = status === 'approved' ? 'Approval' : 'Rejection';
+                        showToast(`✅ ${statusText} email sent to ${appointment.email}. Status updated to ${status}.`, 'success', 5000);
+                    } else {
+                        // If email failed, show error but don't update status
+                        // Remove processing toast
+                        if (processingToast && processingToast.parentNode) {
+                            processingToast.parentNode.removeChild(processingToast);
+                        }
+                        
+                        showToast(`❌ Failed to send email: ${data.error || data.message || 'Unknown error'}`, 'error');
+                        throw new Error('Email sending failed');
                     }
                 } catch (error) {
                     console.error('Error sending notification:', error);
-                    if (resultDiv) {
-                        resultDiv.style.color = '#f44336';
-                        resultDiv.style.backgroundColor = '#ffebee';
-                        resultDiv.textContent = `Error: ${error.message || 'Failed to send notification email'}`;
+                    
+                    // Remove processing toast
+                    if (processingToast && processingToast.parentNode) {
+                        processingToast.parentNode.removeChild(processingToast);
                     }
+                    
+                    showToast(`❌ Error: ${error.message || 'Failed to send notification email'}`, 'error');
+                    // Don't update the appointment status if email fails
+                    return;
                 }
                 
-                // Refresh the appointment list
+                // Refresh the appointment list to reflect the changes
                 await loadAppointments();
                 
             } catch (error) {
                 console.error('Error updating appointment:', error);
+                showToast(`❌ Error updating appointment: ${error.message}`, 'error');
             }
         }
 
-        // Add function to resend email notifications
+        // Update the resendNotification function to use the new toast notifications
         async function resendNotification(index) {
             const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
             const appointment = appointments[index];
             
             if (!appointment) {
                 console.error('Appointment not found');
+                showToast('Appointment not found', 'error');
                 return;
             }
             
-            const resultDiv = document.getElementById('notification-result');
-            if (resultDiv) {
-                resultDiv.style.display = 'block';
-                resultDiv.style.color = '#3f51b5';
-                resultDiv.style.backgroundColor = '#e8eaf6';
-                resultDiv.style.padding = '10px';
-                resultDiv.style.borderRadius = '4px';
-                resultDiv.textContent = `Resending notification email to ${appointment.email}...`;
-            }
+            // Show processing toast
+            const processingToast = showToast(`Resending ${appointment.status} notification to ${appointment.email}...`, 'info', 10000);
             
             try {
                 const response = await fetch('/send-appointment-email', {
@@ -444,24 +566,59 @@
                 
                 const data = await response.json();
                 
-                if (resultDiv) {
-                    if (response.ok) {
-                        resultDiv.style.color = '#4caf50';
-                        resultDiv.style.backgroundColor = '#e8f5e9';
-                        resultDiv.textContent = `Notification email resent to ${appointment.email}`;
-                    } else {
-                        resultDiv.style.color = '#f44336';
-                        resultDiv.style.backgroundColor = '#ffebee';
-                        resultDiv.textContent = `Error: ${data.error || data.message || 'Failed to send email'}`;
-                    }
+                // Remove processing toast
+                if (processingToast && processingToast.parentNode) {
+                    processingToast.parentNode.removeChild(processingToast);
+                }
+                
+                if (response.ok) {
+                    const statusText = appointment.status === 'approved' ? 'Approval' : 'Rejection';
+                    showToast(`✉️ ${statusText} email resent successfully to ${appointment.email}`, 'success');
+                } else {
+                    showToast(`❌ Failed to resend email: ${data.error || data.message || 'Unknown error'}`, 'error');
                 }
             } catch (error) {
                 console.error('Error resending notification:', error);
-                if (resultDiv) {
-                    resultDiv.style.color = '#f44336';
-                    resultDiv.style.backgroundColor = '#ffebee';
-                    resultDiv.textContent = `Error: ${error.message || 'Failed to resend notification email'}`;
+                
+                // Remove processing toast
+                if (processingToast && processingToast.parentNode) {
+                    processingToast.parentNode.removeChild(processingToast);
                 }
+                
+                showToast(`❌ Error: ${error.message || 'Failed to resend notification email'}`, 'error');
+            }
+        }
+
+        // Update the deleteAppointment function to use the new toast notifications
+        async function deleteAppointment(index) {
+            try {
+                const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+                const appointment = appointments[index];
+                
+                if (!appointment) {
+                    console.error('Appointment not found');
+                    showToast('Appointment not found', 'error');
+                    return;
+                }
+                
+                // Confirm deletion
+                if (!confirm(`Are you sure you want to delete this appointment for ${appointment.name || 'this patient'}?`)) {
+                    return;
+                }
+                
+                // Remove the appointment
+                appointments.splice(index, 1);
+                localStorage.setItem('appointments', JSON.stringify(appointments));
+                
+                // Show toast notification
+                showToast(`🗑️ Appointment for ${appointment.name || 'patient'} has been deleted`, 'warning');
+                
+                // Refresh the appointment list
+                await loadAppointments();
+                
+            } catch (error) {
+                console.error('Error deleting appointment:', error);
+                showToast(`❌ Error deleting appointment: ${error.message}`, 'error');
             }
         }
 
