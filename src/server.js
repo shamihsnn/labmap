@@ -360,7 +360,7 @@ app.get('/medicalchatbot', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/medicalchatbot.html'));
 });
 
-// Configure nodemailer
+// Configure nodemailer with environment variables
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -369,15 +369,49 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Email notification endpoint
+// Log email configuration status
+console.log('Email configuration:');
+console.log('- EMAIL_USER configured:', !!process.env.EMAIL_USER);
+console.log('- EMAIL_PASS configured:', !!process.env.EMAIL_PASS);
+
+// Test email connection on startup
+async function verifyEmailConfig() {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn('Email credentials not configured in .env file.');
+        return;
+    }
+    
+    try {
+        await transporter.verify();
+        console.log('Email server connection successful!');
+    } catch (error) {
+        console.error('Email server connection failed:', error.message);
+    }
+}
+
+verifyEmailConfig();
+
+// Enhanced email notification endpoint
 app.post('/send-appointment-email', async (req, res) => {
     const { email, status, labName, date, time, patientName, service } = req.body;
+    
+    if (!email || !status || !labName) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Check if email is configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        return res.status(500).json({ 
+            error: 'Email not configured', 
+            message: 'Email service is not configured on the server.' 
+        });
+    }
     
     const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Appointment ${statusText} - ${labName}`;
     
     const mailOptions = {
-        from: process.env.EMAIL_USER,
+        from: `"Lab Finder" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: subject,
         html: `
@@ -390,10 +424,10 @@ app.post('/send-appointment-email', async (req, res) => {
                 </div>
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
                     <h3 style="color: #333; margin-top: 0;">Appointment Details:</h3>
-                    <p><strong>Patient Name:</strong> ${patientName}</p>
-                    <p><strong>Service:</strong> ${service}</p>
-                    <p><strong>Date:</strong> ${date}</p>
-                    <p><strong>Time:</strong> ${time}</p>
+                    <p><strong>Patient Name:</strong> ${patientName || 'Not specified'}</p>
+                    <p><strong>Service:</strong> ${service || 'General appointment'}</p>
+                    <p><strong>Date:</strong> ${date || 'Not specified'}</p>
+                    <p><strong>Time:</strong> ${time || 'Not specified'}</p>
                     <p><strong>Lab:</strong> ${labName}</p>
                 </div>
                 ${status === 'approved' ? `
@@ -419,10 +453,67 @@ app.post('/send-appointment-email', async (req, res) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ message: 'Email sent successfully' });
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.messageId);
+        res.status(200).json({ 
+            success: true, 
+            message: 'Email sent successfully', 
+            messageId: info.messageId 
+        });
     } catch (error) {
         console.error('Error sending email:', error);
-        res.status(500).json({ error: 'Failed to send email' });
+        res.status(500).json({ 
+            error: 'Failed to send email', 
+            details: error.message 
+        });
+    }
+});
+
+// New endpoint to test email configuration
+app.post('/test-email', async (req, res) => {
+    const { recipientEmail } = req.body;
+    
+    if (!recipientEmail) {
+        return res.status(400).json({ error: 'Recipient email is required' });
+    }
+    
+    // Check if email is configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        return res.status(500).json({ 
+            error: 'Email not configured', 
+            message: 'Email service is not configured on the server.' 
+        });
+    }
+    
+    const mailOptions = {
+        from: `"Lab Finder" <${process.env.EMAIL_USER}>`,
+        to: recipientEmail,
+        subject: 'Test Email from Lab Finder',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #333; text-align: center;">Test Email</h2>
+                <p style="color: #666;">This is a test email from Lab Finder to verify the email configuration.</p>
+                <p style="color: #666;">If you received this email, your email service is working correctly!</p>
+                <div style="text-align: center; margin-top: 30px; color: #666;">
+                    <p>Thank you for using Lab Finder.</p>
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Test email sent successfully:', info.messageId);
+        res.status(200).json({ 
+            success: true, 
+            message: 'Test email sent successfully', 
+            messageId: info.messageId 
+        });
+    } catch (error) {
+        console.error('Error sending test email:', error);
+        res.status(500).json({ 
+            error: 'Failed to send test email', 
+            details: error.message 
+        });
     }
 });

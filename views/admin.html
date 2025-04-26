@@ -160,6 +160,19 @@
             </div>
         </div>
 
+        <!-- Add Email Testing Section -->
+        <div class="email-test-container" style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #333;">Email Testing</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                <div style="flex: 1; min-width: 250px;">
+                    <label style="display: block; margin-bottom: 5px; color: #555;">Recipient Email</label>
+                    <input type="email" id="test-email-input" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;" placeholder="Enter email address">
+                </div>
+                <button id="send-test-email" style="background: #4CAF50; color: white; border: none; padding: 9px 15px; border-radius: 5px; cursor: pointer;">Send Test Email</button>
+            </div>
+            <div id="email-test-result" style="margin-top: 15px; display: none;"></div>
+        </div>
+
         <div class="filter-bar">
             <select id="status-filter">
                 <option value="">All Status</option>
@@ -213,6 +226,15 @@
             try {
                 const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
                 
+                // Place email test result area above appointments for visibility
+                if (!document.getElementById('notification-result')) {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.id = 'notification-result';
+                    resultDiv.style.margin = '15px 0';
+                    resultDiv.style.display = 'none';
+                    document.getElementById('appointments-list').parentNode.insertBefore(resultDiv, document.getElementById('appointments-list'));
+                }
+                
                 // Update stats
                 document.getElementById('total-appointments').textContent = appointments.length;
                 document.getElementById('pending-appointments').textContent = 
@@ -222,12 +244,13 @@
                 document.getElementById('rejected-appointments').textContent = 
                     appointments.filter(apt => apt.status === 'rejected').length;
 
-                // Filter appointments
-                let filtered = appointments;
+                // Apply filters
                 const statusFilter = document.getElementById('status-filter').value;
                 const dateFilter = document.getElementById('date-filter').value;
                 const labFilter = document.getElementById('lab-filter').value;
-
+                
+                let filtered = appointments;
+                
                 if (statusFilter) {
                     filtered = filtered.filter(apt => apt.status === statusFilter);
                 }
@@ -261,46 +284,184 @@
                     return;
                 }
 
-                container.innerHTML = filtered.map((apt, index) => `
-                    <div class="appointment-item ${apt.status}">
-                        <div class="appointment-header">
-                            <h3>Appointment #${index + 1}</h3>
-                            <span class="status ${apt.status}">${apt.status}</span>
-                        </div>
-                        <div class="appointment-details">
-                            <p><strong>Lab:</strong> ${apt.labName}</p>
-                            <p><strong>Patient:</strong> ${apt.name}</p>
-                            <p><strong>Date:</strong> ${new Date(apt.date).toLocaleDateString()}</p>
-                            <p><strong>Time:</strong> ${apt.time}</p>
-                            <p><strong>Service:</strong> ${apt.service}</p>
-                            <p><strong>Contact:</strong> ${apt.phone}</p>
-                            <p><strong>Email:</strong> ${apt.email}</p>
-                            ${apt.notes ? `<p><strong>Notes:</strong> ${apt.notes}</p>` : ''}
-                        </div>
-                        ${apt.status === 'pending' ? `
-                            <div class="appointment-actions">
-                                <button onclick="updateAppointment(${index}, 'approved')" class="approve-btn">
-                                    Approve
-                                </button>
-                                <button onclick="updateAppointment(${index}, 'rejected')" class="reject-btn">
-                                    Reject
-                                </button>
+                // Create appointment display with proper email and action buttons
+                container.innerHTML = filtered.map((apt, index) => {
+                    const originalIndex = appointments.findIndex(a => 
+                        a.email === apt.email && 
+                        a.date === apt.date && 
+                        a.time === apt.time &&
+                        a.labName === apt.labName
+                    );
+                    
+                    return `
+                        <div class="appointment-item ${apt.status}" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid ${apt.status === 'pending' ? '#ff9800' : apt.status === 'approved' ? '#4caf50' : '#f44336'}">
+                            <div class="appointment-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="margin: 0; color: #333;">Appointment #${originalIndex + 1}</h3>
+                                <span class="status" style="padding: 5px 10px; border-radius: 4px; font-size: 12px; text-transform: uppercase; font-weight: bold; background-color: ${apt.status === 'pending' ? '#fff3e0' : apt.status === 'approved' ? '#e8f5e9' : '#ffebee'}; color: ${apt.status === 'pending' ? '#e65100' : apt.status === 'approved' ? '#2e7d32' : '#c62828'};">${apt.status}</span>
                             </div>
-                        ` : ''}
-                    </div>
-                `).join('');
+                            <div class="appointment-details" style="margin-bottom: 15px;">
+                                <p><strong>Lab:</strong> ${apt.labName || 'Not specified'}</p>
+                                <p><strong>Patient:</strong> ${apt.name || 'Not specified'}</p>
+                                <p><strong>Date:</strong> ${apt.date ? new Date(apt.date).toLocaleDateString() : 'Not specified'}</p>
+                                <p><strong>Time:</strong> ${apt.time || 'Not specified'}</p>
+                                <p><strong>Service:</strong> ${apt.service || 'Not specified'}</p>
+                                <p><strong>Contact:</strong> ${apt.phone || 'Not specified'}</p>
+                                <p><strong>Email:</strong> ${apt.email || 'Not specified'}</p>
+                                ${apt.notes ? `<p><strong>Notes:</strong> ${apt.notes}</p>` : ''}
+                            </div>
+                            ${apt.status === 'pending' ? `
+                                <div class="appointment-actions" style="display: flex; gap: 10px;">
+                                    <button onclick="updateAppointment(${originalIndex}, 'approved')" 
+                                        style="background-color: #4caf50; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                                        Approve & Notify
+                                    </button>
+                                    <button onclick="updateAppointment(${originalIndex}, 'rejected')" 
+                                        style="background-color: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                                        Reject & Notify
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="appointment-actions" style="display: flex; gap: 10px;">
+                                    <button onclick="resendNotification(${originalIndex})" 
+                                        style="background-color: #2196f3; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                                        Resend Email Notification
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Failed to load appointments:', error);
             }
         }
 
         // Update appointment status
-        function updateAppointment(index, status) {
-            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            if (appointments[index]) {
-                appointments[index].status = status;
+        async function updateAppointment(index, status) {
+            try {
+                const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+                const appointment = appointments[index];
+                
+                if (!appointment) {
+                    console.error('Appointment not found');
+                    return;
+                }
+                
+                // Update status
+                appointment.status = status;
                 localStorage.setItem('appointments', JSON.stringify(appointments));
-                loadAppointments();
+                
+                // Send email notification
+                const resultDiv = document.getElementById('notification-result');
+                if (resultDiv) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.color = '#3f51b5';
+                    resultDiv.style.backgroundColor = '#e8eaf6';
+                    resultDiv.style.padding = '10px';
+                    resultDiv.style.borderRadius = '4px';
+                    resultDiv.textContent = `Sending notification email to ${appointment.email}...`;
+                }
+                
+                try {
+                    const response = await fetch('/send-appointment-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: appointment.email,
+                            status: status,
+                            labName: appointment.labName,
+                            date: appointment.date,
+                            time: appointment.time,
+                            patientName: appointment.name,
+                            service: appointment.service
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (resultDiv) {
+                        if (response.ok) {
+                            resultDiv.style.color = '#4caf50';
+                            resultDiv.style.backgroundColor = '#e8f5e9';
+                            resultDiv.textContent = `Notification email sent to ${appointment.email}`;
+                        } else {
+                            resultDiv.style.color = '#f44336';
+                            resultDiv.style.backgroundColor = '#ffebee';
+                            resultDiv.textContent = `Error: ${data.error || data.message || 'Failed to send email'}`;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error sending notification:', error);
+                    if (resultDiv) {
+                        resultDiv.style.color = '#f44336';
+                        resultDiv.style.backgroundColor = '#ffebee';
+                        resultDiv.textContent = `Error: ${error.message || 'Failed to send notification email'}`;
+                    }
+                }
+                
+                // Refresh the appointment list
+                await loadAppointments();
+                
+            } catch (error) {
+                console.error('Error updating appointment:', error);
+            }
+        }
+
+        // Add function to resend email notifications
+        async function resendNotification(index) {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const appointment = appointments[index];
+            
+            if (!appointment) {
+                console.error('Appointment not found');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('notification-result');
+            if (resultDiv) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.color = '#3f51b5';
+                resultDiv.style.backgroundColor = '#e8eaf6';
+                resultDiv.style.padding = '10px';
+                resultDiv.style.borderRadius = '4px';
+                resultDiv.textContent = `Resending notification email to ${appointment.email}...`;
+            }
+            
+            try {
+                const response = await fetch('/send-appointment-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: appointment.email,
+                        status: appointment.status,
+                        labName: appointment.labName,
+                        date: appointment.date,
+                        time: appointment.time,
+                        patientName: appointment.name,
+                        service: appointment.service
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (resultDiv) {
+                    if (response.ok) {
+                        resultDiv.style.color = '#4caf50';
+                        resultDiv.style.backgroundColor = '#e8f5e9';
+                        resultDiv.textContent = `Notification email resent to ${appointment.email}`;
+                    } else {
+                        resultDiv.style.color = '#f44336';
+                        resultDiv.style.backgroundColor = '#ffebee';
+                        resultDiv.textContent = `Error: ${data.error || data.message || 'Failed to send email'}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error resending notification:', error);
+                if (resultDiv) {
+                    resultDiv.style.color = '#f44336';
+                    resultDiv.style.backgroundColor = '#ffebee';
+                    resultDiv.textContent = `Error: ${error.message || 'Failed to resend notification email'}`;
+                }
             }
         }
 
@@ -323,6 +484,54 @@
                 option.textContent = lab;
                 labFilter.appendChild(option);
             });
+        });
+
+        // Add Email Testing Functionality
+        document.getElementById('send-test-email').addEventListener('click', async () => {
+            const emailInput = document.getElementById('test-email-input');
+            const resultDiv = document.getElementById('email-test-result');
+            const recipientEmail = emailInput.value.trim();
+            
+            if (!recipientEmail) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.color = '#f44336';
+                resultDiv.style.padding = '10px';
+                resultDiv.style.backgroundColor = '#ffebee';
+                resultDiv.style.borderRadius = '4px';
+                resultDiv.textContent = 'Please enter a valid email address';
+                return;
+            }
+            
+            try {
+                resultDiv.style.display = 'block';
+                resultDiv.style.color = '#3f51b5';
+                resultDiv.style.padding = '10px';
+                resultDiv.style.backgroundColor = '#e8eaf6';
+                resultDiv.style.borderRadius = '4px';
+                resultDiv.textContent = 'Sending test email...';
+                
+                const response = await fetch('/test-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recipientEmail })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.style.color = '#4caf50';
+                    resultDiv.style.backgroundColor = '#e8f5e9';
+                    resultDiv.textContent = `Email sent successfully! Check ${recipientEmail} inbox.`;
+                } else {
+                    resultDiv.style.color = '#f44336';
+                    resultDiv.style.backgroundColor = '#ffebee';
+                    resultDiv.textContent = `Error: ${data.error || data.message || 'Failed to send email'}`;
+                }
+            } catch (error) {
+                resultDiv.style.color = '#f44336';
+                resultDiv.style.backgroundColor = '#ffebee';
+                resultDiv.textContent = `Error: ${error.message || 'Failed to send email'}`;
+            }
         });
     </script>
 </body>
