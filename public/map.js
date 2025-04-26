@@ -349,8 +349,24 @@ function initializeLabMarkers() {
         const marker = L.marker([lab.lat, lab.lng], { 
             icon: IconFactory.labIcon
         })
-        .addTo(state.map)
-        .bindPopup(createLabPopupContent(lab));
+        .addTo(state.map);
+        
+        // Create popup with a wrapper div to handle events
+        const popupContent = document.createElement('div');
+        popupContent.innerHTML = createLabPopupContent(lab);
+        
+        // Add click event listener to the Book Appointment button
+        const popup = L.popup().setContent(popupContent);
+        marker.bindPopup(popup);
+        
+        // Add click handler after popup is opened
+        marker.on('popupopen', () => {
+            const bookBtn = popupContent.querySelector('button:last-of-type');
+            if (bookBtn) {
+                bookBtn.onclick = () => createAppointmentModal(lab);
+            }
+        });
+        
         return { lab, marker };
     });
 }
@@ -368,7 +384,13 @@ function addUserMarker(userLocation) {
 
 
 // 1. Add this function to create the appointment modal HTML
-function createAppointmentModal(lab) {
+window.createAppointmentModal = function(lab) {
+    // Remove any existing modal first
+    const existingModal = document.getElementById('appointment-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
     const modal = document.createElement('div');
     modal.id = 'appointment-modal';
     modal.className = 'modal';
@@ -379,11 +401,22 @@ function createAppointmentModal(lab) {
             <form id="appointment-form" class="appointment-form">
                 <div class="form-group">
                     <label for="name">Full Name</label>
-                    <input type="text" id="name" name="name" required>
+                    <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="Enter your phone number">
                 </div>
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="service">Select Service</label>
+                    <select id="service" name="service" required>
+                        <option value="">Choose a service</option>
+                        ${lab.services.map(service => `<option value="${service}">${service}</option>`).join('')}
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="date">Preferred Date</label>
@@ -391,11 +424,14 @@ function createAppointmentModal(lab) {
                 </div>
                 <div class="form-group">
                     <label for="time">Preferred Time</label>
-                    <input type="time" id="time" name="time" required>
+                    <select id="time" name="time" required>
+                        <option value="">Select time slot</option>
+                        ${generateTimeSlots()}
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="purpose">Purpose of Visit</label>
-                    <textarea id="purpose" name="purpose" required></textarea>
+                    <label for="notes">Additional Notes</label>
+                    <textarea id="notes" name="notes" placeholder="Any specific requirements or medical conditions..."></textarea>
                 </div>
                 <button type="submit" class="submit-btn">Book Appointment</button>
             </form>
@@ -403,13 +439,29 @@ function createAppointmentModal(lab) {
     `;
 
     document.body.appendChild(modal);
+    
+    // Show modal with animation
+    requestAnimationFrame(() => {
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+    });
 
     const closeBtn = modal.querySelector('.close');
-    closeBtn.onclick = () => modal.style.display = 'none';
+    closeBtn.onclick = () => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.remove();
+        }, 300);
+    };
 
     window.onclick = (event) => {
         if (event.target === modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modal.remove();
+            }, 300);
         }
     };
 
@@ -418,12 +470,16 @@ function createAppointmentModal(lab) {
         e.preventDefault();
         const formData = {
             labName: lab.name,
+            labContact: lab.contact,
             name: form.name.value,
+            phone: form.phone.value,
             email: form.email.value,
+            service: form.service.value,
             date: form.date.value,
             time: form.time.value,
-            purpose: form.purpose.value,
-            status: 'pending'
+            notes: form.notes.value,
+            status: 'pending',
+            createdAt: new Date().toISOString()
         };
 
         // Save to localStorage
@@ -431,15 +487,100 @@ function createAppointmentModal(lab) {
         appointments.push(formData);
         localStorage.setItem('appointments', JSON.stringify(appointments));
 
-        // Show success message
-        showAlert('Appointment booked successfully! Please wait for confirmation.');
-        modal.style.display = 'none';
-    };
+        // Show success message with appointment details
+        const successMessage = `
+            Appointment booked successfully!
+            
+            Details:
+            Lab: ${formData.labName}
+            Date: ${formatDate(formData.date)}
+            Time: ${formData.time}
+            Service: ${formData.service}
+            
+            We'll send a confirmation to ${formData.email}
+            Lab will contact you at ${formData.phone}
+        `;
 
-    return modal;
+        showAlert(successMessage);
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.remove();
+        }, 300);
+    };
+};
+
+// Helper function to generate time slots
+function generateTimeSlots() {
+    const slots = [];
+    for (let hour = 9; hour <= 20; hour++) {
+        const time24 = `${hour.toString().padStart(2, '0')}:00`;
+        const time12 = convertTo12Hour(time24);
+        slots.push(`<option value="${time24}">${time12}</option>`);
+        
+        const time24Half = `${hour.toString().padStart(2, '0')}:30`;
+        const time12Half = convertTo12Hour(time24Half);
+        slots.push(`<option value="${time24Half}">${time12Half}</option>`);
+    }
+    return slots.join('');
 }
 
-// 2. Modify createLabPopupContent to add the Book Appointment button
+// Helper function to convert 24h to 12h format
+function convertTo12Hour(time24) {
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${hour12}:${minutes} ${period}`;
+}
+
+// Helper function to format date
+function formatDate(dateStr) {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateStr).toLocaleDateString(undefined, options);
+}
+
+// Enhanced alert function
+function showAlert(message, type = 'success') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert';
+    
+    if (type === 'success') {
+        const [title, ...details] = message.split('\n\n');
+        alertDiv.innerHTML = `
+            <div class="alert-content">
+                <div class="alert-title">
+                    <i class="fas fa-check-circle"></i>
+                    ${title}
+                </div>
+                <div class="alert-details">
+                    ${details.join('\n').split('\n').map(line => {
+                        const [key, value] = line.split(': ');
+                        return key && value ? `<p><strong>${key}:</strong> ${value}</p>` : '';
+                    }).join('')}
+                </div>
+                <div class="alert-message">
+                    You will receive a confirmation email shortly.
+                </div>
+            </div>
+        `;
+    } else {
+        alertDiv.innerHTML = message;
+    }
+
+    document.body.appendChild(alertDiv);
+    
+    // Trigger reflow for animation
+    alertDiv.offsetHeight;
+    alertDiv.classList.add('show');
+
+    setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 5000);
+}
+
+// 2. Update the createLabPopupContent function to properly stringify the lab object
 function createLabPopupContent(lab) {
     return `
         <div class="lab-popup">
@@ -451,25 +592,16 @@ function createLabPopupContent(lab) {
                 <p><i class="fas fa-clock"></i> ${lab.timings}</p>
             </div>
             <div class="popup-buttons">
-                <button onclick="getDirections(${lab.lat}, ${lab.lng})" class="map-btn">
-                    Get Directions
-                </button>
-                <button onclick="createAppointmentModal(${JSON.stringify(lab).replace(/"/g, '&quot;')})" class="map-btn">
-                    Book Appointment
-                </button>
+                <button class="map-btn">Get Directions</button>
+                <button class="map-btn">Book Appointment</button>
             </div>
             <div class="rating-row">
                 <div class="stars">${createStarRating(lab.rating || 0)}</div>
-                <button onclick="submitReview('${lab.name}')" class="review-btn">Submit Review</button>
+                <button class="review-btn">Submit Review</button>
             </div>
         </div>
     `;
 }
-
-// 3. Expose the modal function globally for inline onclick
-window.createAppointmentModal = createAppointmentModal;
-
-
 
 function createStarRating(rating) {
     return '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
@@ -824,16 +956,35 @@ function displayFilteredLabs(filteredLabs) {
                     <p><i class="fas fa-clock"></i> ${lab.timings}</p>
                 </div>
                 <div class="lab-actions">
-                    <button onclick="getDirections(${lab.lat}, ${lab.lng})" class="map-btn">
+                    <button class="map-btn directions-btn" data-lat="${lab.lat}" data-lng="${lab.lng}">
                         Get Directions
                     </button>
-                    <button onclick="createAppointmentModal(${JSON.stringify(lab).replace(/"/g, '&quot;')})" class="map-btn">
+                    <button class="map-btn appointment-btn" data-lab='${JSON.stringify(lab)}'>
                         Book Appointment
                     </button>
                 </div>
             </div>
         `).join('') :
         '<div class="no-results">No labs found matching your criteria</div>';
+
+    // Add event listeners after creating the elements
+    const directionBtns = labListElement.querySelectorAll('.directions-btn');
+    const appointmentBtns = labListElement.querySelectorAll('.appointment-btn');
+
+    directionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const lat = parseFloat(btn.dataset.lat);
+            const lng = parseFloat(btn.dataset.lng);
+            getDirections(lat, lng);
+        });
+    });
+
+    appointmentBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const lab = JSON.parse(btn.dataset.lab);
+            createAppointmentModal(lab);
+        });
+    });
 }
 
 
@@ -916,10 +1067,6 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 function toRad(degrees) {
     return degrees * (Math.PI / 180);
-}
-
-function showAlert(message) {
-    alert(message); // Could be replaced with a custom alert implementation
 }
 
 function showLoadingIndicator() {
@@ -1191,5 +1338,86 @@ document.addEventListener('DOMContentLoaded', () => {
         appointmentNavBtn.remove();
     }
 });
+
+// Add admin route handler
+window.addEventListener('DOMContentLoaded', () => {
+    // Check if this is the admin route
+    const adminHash = '#admin';
+    const adminKey = 'lab_finder_admin';
+    
+    if (window.location.hash === adminHash) {
+        // Simple password protection
+        const password = prompt('Enter admin password:');
+        if (password === 'admin123') { // You should change this password
+            localStorage.setItem(adminKey, 'true');
+            showAdminPanel();
+        } else {
+            alert('Invalid password');
+            window.location.hash = '';
+        }
+    }
+});
+
+// Admin panel function
+function showAdminPanel() {
+    const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+    
+    // Create admin panel container
+    const adminPanel = document.createElement('div');
+    adminPanel.className = 'admin-panel';
+    adminPanel.innerHTML = `
+        <div class="admin-header">
+            <h2>Admin Panel - Appointments</h2>
+            <button onclick="window.location.hash = ''" class="close-admin">×</button>
+        </div>
+        <div class="appointments-list">
+            ${appointments.map((apt, index) => `
+                <div class="appointment-item ${apt.status}">
+                    <div class="appointment-header">
+                        <h3>Appointment #${index + 1}</h3>
+                        <span class="status ${apt.status}">${apt.status}</span>
+                    </div>
+                    <div class="appointment-details">
+                        <p><strong>Lab:</strong> ${apt.labName}</p>
+                        <p><strong>Patient:</strong> ${apt.name}</p>
+                        <p><strong>Date:</strong> ${formatDate(apt.date)}</p>
+                        <p><strong>Time:</strong> ${apt.time}</p>
+                        <p><strong>Service:</strong> ${apt.service}</p>
+                        <p><strong>Contact:</strong> ${apt.phone}</p>
+                        <p><strong>Email:</strong> ${apt.email}</p>
+                        ${apt.notes ? `<p><strong>Notes:</strong> ${apt.notes}</p>` : ''}
+                    </div>
+                    <div class="appointment-actions">
+                        ${apt.status === 'pending' ? `
+                            <button onclick="updateAppointment(${index}, 'approved')" class="approve-btn">
+                                Approve
+                            </button>
+                            <button onclick="updateAppointment(${index}, 'rejected')" class="reject-btn">
+                                Reject
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('') || '<p class="no-appointments">No appointments found</p>'}
+        </div>
+    `;
+    
+    document.body.appendChild(adminPanel);
+}
+
+// Function to update appointment status
+window.updateAppointment = function(index, status) {
+    const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+    if (appointments[index]) {
+        appointments[index].status = status;
+        localStorage.setItem('appointments', JSON.stringify(appointments));
+        
+        // Refresh admin panel
+        document.querySelector('.admin-panel').remove();
+        showAdminPanel();
+        
+        showAlert(`Appointment ${status} successfully!`);
+    }
+};
 
 

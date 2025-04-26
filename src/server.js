@@ -6,20 +6,21 @@ import { dirname } from 'path';
 import path from 'path';
 import fetch from 'node-fetch';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import multer from 'multer';
 import compression from 'compression';
 import nodemailer from 'nodemailer';
+import cookieParser from 'cookie-parser';
 
 // Log environment details
 console.log('Current working directory:', process.cwd());
 console.log('.env file path:', path.join(process.cwd(), '.env'));
-
-// Configure environment
-
 console.log('API Key loaded:', process.env.GEMINI_API_KEY ? 'Yes' : 'No');
 
-
+// JWT Secret Key
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+console.log('JWT Secret generated');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const __filename = fileURLToPath(import.meta.url);
@@ -28,17 +29,86 @@ const app = express();
 const conversationHistory = new Map();
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-// Middleware
 
+// Admin credentials - In production, these should be in environment variables
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "admin123";
+
+// Basic middleware setup
 app.use(express.json({limit: '100mb'}));
 app.use(express.urlencoded({limit: '100mb', extended: true, parameterLimit: 50000}));
+app.use(compression());
 app.use(express.static('public'));
+app.use(express.static('views'));
 app.use('/video', express.static('video'));
 app.use('/public', express.static(path.join(__dirname, '../public')));
-app.use('/images', express.static(path.join(__dirname, '../public/images')));
-app.use(compression());
+app.use('/images', express.static(path.join(__dirname, '../images')));
+app.use(cookieParser());
 
+// Admin authentication middleware
+function authenticateAdmin(req, res, next) {
+    // Try to get token from cookie
+    const token = req.cookies && req.cookies.adminToken;
+    console.log('JWT from cookie:', token);
+    if (!token) {
+        return res.redirect('/admin/login');
+    }
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        console.log('Token verification failed:', error.message);
+        return res.redirect('/admin/login');
+    }
+}
 
+// Admin routes
+app.get('/admin/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../views/admin-login.html'));
+});
+
+app.post('/admin/login', express.json(), (req, res) => {
+    const { username, password } = req.body;
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        const token = jwt.sign(
+            { username, role: 'admin' },
+            JWT_SECRET,
+            { expiresIn: '2h' }
+        );
+        // Set JWT as HTTP-only cookie
+        res.cookie('adminToken', token, {
+            httpOnly: true,
+            maxAge: 2 * 60 * 60 * 1000, // 2 hours
+            sameSite: 'lax',
+        });
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Invalid credentials' });
+    }
+});
+
+// Logout: clear the cookie
+app.post('/admin/logout', (req, res) => {
+    res.clearCookie('adminToken');
+    res.json({ success: true });
+});
+
+// Token verify for AJAX (optional, for fetch-based checks)
+app.post('/admin/verify-token', (req, res) => {
+    const token = req.cookies && req.cookies.adminToken;
+    if (!token) return res.status(401).json({ error: 'No token' });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        res.json({ valid: true, user: decoded });
+    } catch (error) {
+        res.status(401).json({ error: 'Invalid token' });
+    }
+});
+
+app.get('/admin', authenticateAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, '../views/admin.html'));
+});
 
 // ApiMedic credentials
 const USERNAME = "x5NRy_GMAIL_COM_AUT";
@@ -301,9 +371,9 @@ const transporter = nodemailer.createTransport({
 
 // Email notification endpoint
 app.post('/send-appointment-email', async (req, res) => {
-    const { email, status, labName, date, time } = req.body;
+    const { email, status, labName, date, time, patientName, service } = req.body;
     
-    const statusText = status === 'accepted' ? 'accepted' : 'rejected';
+    const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Appointment ${statusText} - ${labName}`;
     
     const mailOptions = {
@@ -311,17 +381,40 @@ app.post('/send-appointment-email', async (req, res) => {
         to: email,
         subject: subject,
         html: `
-            <h2>Appointment Update</h2>
-            <p>Your appointment at ${labName} has been ${statusText}.</p>
-            <p><strong>Date:</strong> ${date}</p>
-            <p><strong>Time:</strong> ${time}</p>
-            ${status === 'accepted' ? `
-                <p>Please arrive 10 minutes before your scheduled time.</p>
-                <p>Don't forget to bring any relevant medical records or prescriptions.</p>
-            ` : `
-                <p>We apologize for any inconvenience. Please feel free to schedule another appointment.</p>
-            `}
-            <p>Thank you for choosing our services.</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #333; text-align: center;">Appointment Update</h2>
+                <div style="background: ${status === 'approved' ? '#d4edda' : '#f8d7da'}; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <p style="margin: 0; color: ${status === 'approved' ? '#155724' : '#721c24'};">
+                        Your appointment at ${labName} has been ${statusText}.
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #333; margin-top: 0;">Appointment Details:</h3>
+                    <p><strong>Patient Name:</strong> ${patientName}</p>
+                    <p><strong>Service:</strong> ${service}</p>
+                    <p><strong>Date:</strong> ${date}</p>
+                    <p><strong>Time:</strong> ${time}</p>
+                    <p><strong>Lab:</strong> ${labName}</p>
+                </div>
+                ${status === 'approved' ? `
+                    <div style="margin-top: 20px;">
+                        <h4 style="color: #333;">Important Information:</h4>
+                        <ul style="color: #666;">
+                            <li>Please arrive 10 minutes before your scheduled time</li>
+                            <li>Bring any relevant medical records or prescriptions</li>
+                            <li>Wear a mask and follow COVID-19 safety protocols</li>
+                        </ul>
+                    </div>
+                ` : `
+                    <div style="margin-top: 20px; color: #666;">
+                        <p>We apologize for any inconvenience. Please feel free to schedule another appointment.</p>
+                    </div>
+                `}
+                <div style="text-align: center; margin-top: 30px; color: #666;">
+                    <p>Thank you for choosing our services.</p>
+                    <p>If you have any questions, please contact us.</p>
+                </div>
+            </div>
         `
     };
 

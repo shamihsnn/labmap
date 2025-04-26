@@ -3,131 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediMap Admin Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link rel="stylesheet" href="styles.css" />
+    <title>Lab Finder Admin</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
         .admin-container {
             max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
+            margin: 0 auto;
         }
-        .appointment-card {
+
+        .admin-header {
             background: white;
-            border-radius: 10px;
             padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .appointment-actions {
+            margin-bottom: 20px;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            color: #333;
+            display: flex;
+            align-items: center;
             gap: 10px;
-            margin-top: 15px;
         }
-        .btn-accept {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+
+        .admin-header h1 i {
+            color: #4CAF50;
         }
-        .btn-reject {
+
+        .logout-btn {
             background: #f44336;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
         }
-        .appointment-status {
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
             font-weight: bold;
-            margin-top: 10px;
+            color: #333;
         }
-        .status-pending { color: #ff9800; }
-        .status-accepted { color: #4CAF50; }
-        .status-rejected { color: #f44336; }
+
+        .filter-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-width: 150px;
+        }
+
+        .appointments-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .no-appointments {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .stat-card .value {
+                font-size: 20px;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+            }
+
+            .filter-bar select {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="admin-container">
-        <h1>Admin Portal - Appointment Management</h1>
-        <div id="appointments-list">
+        <div class="admin-header">
+            <h1><i class="fas fa-clinic-medical"></i> Lab Finder Admin</h1>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h3>Total Appointments</h3>
+                <div class="value" id="total-appointments">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Appointments</h3>
+                <div class="value" id="pending-appointments">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Approved Appointments</h3>
+                <div class="value" id="approved-appointments">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Rejected Appointments</h3>
+                <div class="value" id="rejected-appointments">0</div>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <select id="status-filter">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+            <select id="date-filter">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+            </select>
+            <select id="lab-filter">
+                <option value="">All Labs</option>
+            </select>
+        </div>
+
+        <div class="appointments-container" id="appointments-list">
             <!-- Appointments will be loaded here -->
         </div>
     </div>
 
     <script>
-        // Load appointments from localStorage
-        function loadAppointments() {
-            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            const appointmentsList = document.getElementById('appointments-list');
-            appointmentsList.innerHTML = '';
-
-            appointments.forEach((appointment, index) => {
-                const card = document.createElement('div');
-                card.className = 'appointment-card';
-                card.innerHTML = `
-                    <h3>Appointment at ${appointment.labName}</h3>
-                    <p><strong>Patient:</strong> ${appointment.name}</p>
-                    <p><strong>Email:</strong> ${appointment.email}</p>
-                    <p><strong>Date:</strong> ${appointment.date}</p>
-                    <p><strong>Time:</strong> ${appointment.time}</p>
-                    <p><strong>Purpose:</strong> ${appointment.purpose}</p>
-                    <div class="appointment-status status-${appointment.status || 'pending'}">
-                        Status: ${appointment.status || 'Pending'}
-                    </div>
-                    ${appointment.status ? '' : `
-                        <div class="appointment-actions">
-                            <button class="btn-accept" onclick="handleAppointment(${index}, 'accepted')">
-                                <i class="fas fa-check"></i> Accept
-                            </button>
-                            <button class="btn-reject" onclick="handleAppointment(${index}, 'rejected')">
-                                <i class="fas fa-times"></i> Reject
-                            </button>
-                        </div>
-                    `}
-                `;
-                appointmentsList.appendChild(card);
-            });
+        // Remove getAuthHeaders and all Authorization header logic
+        async function checkAuthentication() {
+            // No need to check via fetch, just rely on server-side redirect
+            return true;
         }
 
-        // Handle appointment acceptance/rejection
-        async function handleAppointment(index, status) {
-            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            const appointment = appointments[index];
-            appointment.status = status;
-            
-            // Send email notification
+        async function handleLogout() {
             try {
-                const response = await fetch('/send-appointment-email', {
+                await fetch('/admin/logout', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: appointment.email,
-                        status: status,
-                        labName: appointment.labName,
-                        date: appointment.date,
-                        time: appointment.time
-                    })
                 });
-                
-                if (response.ok) {
-                    localStorage.setItem('appointments', JSON.stringify(appointments));
-                    loadAppointments();
-                } else {
-                    alert('Failed to send email notification');
-                }
             } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to process appointment');
+                console.error('Logout error:', error);
+            } finally {
+                window.location.href = '/admin/login';
             }
         }
 
-        // Load appointments when page loads
-        document.addEventListener('DOMContentLoaded', loadAppointments);
+        // Initialize page
+        window.addEventListener('load', async () => {
+            await checkAuthentication();
+            await loadAppointments();
+        });
+
+        // Update appointments loading function
+        async function loadAppointments() {
+            try {
+                const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+                
+                // Update stats
+                document.getElementById('total-appointments').textContent = appointments.length;
+                document.getElementById('pending-appointments').textContent = 
+                    appointments.filter(apt => apt.status === 'pending').length;
+                document.getElementById('approved-appointments').textContent = 
+                    appointments.filter(apt => apt.status === 'approved').length;
+                document.getElementById('rejected-appointments').textContent = 
+                    appointments.filter(apt => apt.status === 'rejected').length;
+
+                // Filter appointments
+                let filtered = appointments;
+                const statusFilter = document.getElementById('status-filter').value;
+                const dateFilter = document.getElementById('date-filter').value;
+                const labFilter = document.getElementById('lab-filter').value;
+
+                if (statusFilter) {
+                    filtered = filtered.filter(apt => apt.status === statusFilter);
+                }
+                if (dateFilter) {
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    filtered = filtered.filter(apt => {
+                        const aptDate = new Date(apt.date);
+                        if (dateFilter === 'today') {
+                            return aptDate.toDateString() === today.toDateString();
+                        } else if (dateFilter === 'week') {
+                            const weekAgo = new Date(today);
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            return aptDate >= weekAgo;
+                        } else if (dateFilter === 'month') {
+                            const monthAgo = new Date(today);
+                            monthAgo.setMonth(monthAgo.getMonth() - 1);
+                            return aptDate >= monthAgo;
+                        }
+                        return true;
+                    });
+                }
+                if (labFilter) {
+                    filtered = filtered.filter(apt => apt.labName === labFilter);
+                }
+
+                // Display appointments
+                const container = document.getElementById('appointments-list');
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="no-appointments">No appointments found</div>';
+                    return;
+                }
+
+                container.innerHTML = filtered.map((apt, index) => `
+                    <div class="appointment-item ${apt.status}">
+                        <div class="appointment-header">
+                            <h3>Appointment #${index + 1}</h3>
+                            <span class="status ${apt.status}">${apt.status}</span>
+                        </div>
+                        <div class="appointment-details">
+                            <p><strong>Lab:</strong> ${apt.labName}</p>
+                            <p><strong>Patient:</strong> ${apt.name}</p>
+                            <p><strong>Date:</strong> ${new Date(apt.date).toLocaleDateString()}</p>
+                            <p><strong>Time:</strong> ${apt.time}</p>
+                            <p><strong>Service:</strong> ${apt.service}</p>
+                            <p><strong>Contact:</strong> ${apt.phone}</p>
+                            <p><strong>Email:</strong> ${apt.email}</p>
+                            ${apt.notes ? `<p><strong>Notes:</strong> ${apt.notes}</p>` : ''}
+                        </div>
+                        ${apt.status === 'pending' ? `
+                            <div class="appointment-actions">
+                                <button onclick="updateAppointment(${index}, 'approved')" class="approve-btn">
+                                    Approve
+                                </button>
+                                <button onclick="updateAppointment(${index}, 'rejected')" class="reject-btn">
+                                    Reject
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+            }
+        }
+
+        // Update appointment status
+        function updateAppointment(index, status) {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            if (appointments[index]) {
+                appointments[index].status = status;
+                localStorage.setItem('appointments', JSON.stringify(appointments));
+                loadAppointments();
+            }
+        }
+
+        // Attach logout handler
+        document.querySelector('.logout-btn').onclick = handleLogout;
+
+        // Add event listeners for filters
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('status-filter')?.addEventListener('change', loadAppointments);
+            document.getElementById('date-filter')?.addEventListener('change', loadAppointments);
+            document.getElementById('lab-filter')?.addEventListener('change', loadAppointments);
+
+            // Load lab options
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const labs = [...new Set(appointments.map(apt => apt.labName))];
+            const labFilter = document.getElementById('lab-filter');
+            labs.forEach(lab => {
+                const option = document.createElement('option');
+                option.value = lab;
+                option.textContent = lab;
+                labFilter.appendChild(option);
+            });
+        });
     </script>
 </body>
 </html> 

@@ -12,16 +12,18 @@
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "axios": "^1.7.8",
-    "compression": "^1.7.5",
+    "axios": "^1.9.0",
+    "compression": "^1.8.0",
+    "cookie-parser": "^1.4.7",
     "crypto": "^1.0.1",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.1",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
-    "mongoose": "^8.8.2",
+    "mongoose": "^8.14.0",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^6.9.9"
+    "nodemailer": "^6.10.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.7",
