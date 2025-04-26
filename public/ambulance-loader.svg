@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+     viewBox="0 0 2000 600" 
+     preserveAspectRatio="xMidYMid meet"
+     style="width: 100%; height: auto; max-width: 100vw;">
+  
+  <style>
+   #ambulance-group {
+    transform-origin: center;
+    animation: drive 4s linear infinite;  
+    transform: scale(1.7);  
+    will-change: transform, opacity; 
+}
+    
+    .siren {
+      fill: #FF495C;
+      animation: blink 0.5s ease-in-out infinite alternate;
+    }
+    
+    .wheel {
+      animation: bounce 0.5s ease-in-out infinite alternate;
+    }
+@keyframes drive {
+    0% { 
+        transform: translateX(-5%) scale(1.7) translateY(20px);
+        opacity: 1;
+        filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.2));
+    }
+    20% {
+        transform: translateX(-10%) scale(1.7) translateY(0);
+        opacity: 1;
+        filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.3));
+    }
+    80% {
+        transform: translateX(80%) scale(1.7) translateY(0);
+        opacity: 1;
+        filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.3));
+    }
+    100% { 
+        transform: translateX(120%) scale(1.7) translateY(50px);
+        opacity: 0;
+        filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.2));
+    }
+}
+
+  
+    @keyframes blink {
+      0% { fill: #ff0000; }
+      100% { fill: #ff6666; }
+    }
+    
+   .headlight {
+    fill: #FFFFFF;
+    animation: headlightBlink 0.8s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 35px #FFD700);
+    transform-box: fill-box;
+    will-change: filter;
+}
+
+@keyframes headlightBlink {
+    0% { 
+        fill: #FFFFFF;
+        filter: drop-shadow(0 0 35px #FFD700) drop-shadow(0 0 55px #FFF);
+    }
+    100% { 
+        fill: #FFD700;
+        filter: drop-shadow(0 0 25px #FFD700) drop-shadow(0 0 35px #FFF);
+    }
+}
+
+
+    @keyframes bounce {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(2px); }
+    }
+  </style>
+
+  <g id="ambulance-group">
+    <!-- Main body -->
+    <circle class="headlight" cx="28" cy="280" r="18" />
+<circle class="headlight" cx="28" cy="320" r="18" />
+    <path style="fill:#F0EFEF;" d="M421.84,221.454l-34.103-64.417c-4.694-8.867-13.906-14.413-23.939-14.413H51.553
+      c-13.007,0-23.551,10.545-23.551,23.551V329.96c0,11.208,9.087,20.295,20.296,20.295h417.067c11.209,0,20.295-9.087,20.295-20.295
+      v-58.515c0-9.059-5.467-17.223-13.841-20.676l-32.413-13.36C431.869,234.305,425.655,228.659,421.84,221.454z"/>
+      <!-- Move headlights here for better positioning -->
+
+    <!-- Red cross -->
+    <path class="siren" d="M120.774,194.795v-20.978c0-2.464-1.997-4.462-4.462-4.462h-14.72c-2.464,0-4.462,1.998-4.462,4.462
+      v20.978H76.153c-2.465,0-4.463,1.998-4.463,4.463v14.72c0,2.464,1.998,4.463,4.463,4.463H97.13v20.977
+      c0,2.465,1.998,4.463,4.462,4.463h14.721c2.465,0,4.462-1.998,4.462-4.463v-20.977h20.978c2.465,0,4.463-1.999,4.463-4.463v-14.72
+      c0-2.465-1.998-4.463-4.463-4.463L120.774,194.795L120.774,194.795z"/>
+
+    <!-- Wheels -->
+    <circle class="wheel" style="fill:#333E48;" cx="124.353" cy="350.255" r="51.071"/>
+    <circle class="wheel" style="fill:#333E48;" cx="373.629" cy="350.255" r="51.071"/>
+     
+
+    
+    <!-- Rest of your SVG paths -->
+       <!-- Windows and Details -->
+    <g>
+        <path style="fill:#0C7ED3;" d="M66.037,177.283h-10.3c-4.38,0-7.929-3.549-7.929-7.929c0-4.38,3.549-7.929,7.929-7.929h10.3
+            c4.38,0,7.929,3.549,7.929,7.929C73.966,173.734,70.416,177.283,66.037,177.283z"/>
+        <path style="fill:#0C7ED3;" d="M162.168,177.283h-10.301c-4.38,0-7.929-3.549-7.929-7.929c0-4.38,3.549-7.929,7.929-7.929h10.301
+            c4.38,0,7.929,3.549,7.929,7.929S166.548,177.283,162.168,177.283z"/>
+    </g>
+
+    <!-- Side Panels -->
+    <path style="fill:#57C9E8;" d="M421.84,221.454l-27.583-52.1h-16.592c-3.995,0-6.555,4.251-4.686,7.783l24.101,45.524
+        c1.871,3.531,5.537,5.739,9.533,5.739h20.093C424.825,226.301,423.178,223.98,421.84,221.454z"/>
+    <path style="fill:#57C9E8;" d="M361.542,218.587l-22.199-41.932c-2.379-4.491-7.044-7.3-12.127-7.3h-24.511
+        c-4.96,0-8.982,4.021-8.982,8.982v41.083c0,4.96,4.021,8.982,8.982,8.982h52.927C360.672,228.401,363.9,223.04,361.542,218.587z"/>
+
+    <!-- Wheel Hubs -->
+    <circle style="fill:#C3C6C8;" cx="124.353" cy="350.255" r="22.782"/>
+    <circle style="fill:#C3C6C8;" cx="373.629" cy="350.255" r="22.782"/>
+
+    <!-- Side Panels -->
+    <path style="fill:#C3C6C8;" d="M496.466,322.782h-27.139c-4.2,0-7.604,3.405-7.604,7.605v18.899c0,4.2,3.405,7.604,7.604,7.604
+        h27.139c4.2,0,7.605-3.405,7.605-7.604v-18.899C504.071,326.187,500.666,322.782,496.466,322.782z"/>
+    <path style="fill:#C3C6C8;" d="M42.672,322.782H15.534c-4.201,0-7.605,3.405-7.605,7.605v18.899c0,4.2,3.405,7.604,7.605,7.604
+        h27.138c4.201,0,7.605-3.405,7.605-7.604v-18.899C50.278,326.187,46.873,322.782,42.672,322.782z"/>
+
+    <!-- Yellow Accents -->
+    <path style="fill:#FFD13F;" d="M458.288,299.187h27.372v23.595h-27.372c-3.242,0-5.872-2.629-5.872-5.872v-11.85
+        C452.416,301.816,455.045,299.187,458.288,299.187z"/>
+    <path style="fill:#FFD13F;" d="M49.865,322.782H28.001v-23.595h21.864c3.243,0,5.872,2.629,5.872,5.874v11.85
+        C55.737,320.153,53.108,322.782,49.865,322.782z"/>
+
+    <!-- Window Panel -->
+    <path style="fill:#57C9E8;" d="M259.534,228.401h-60.981c-5.727,0-10.369-4.642-10.369-10.369v-38.31
+        c0-5.727,4.642-10.369,10.369-10.369h60.981c5.727,0,10.369,4.642,10.369,10.369v38.31
+        C269.903,223.759,265.261,228.401,259.534,228.401z"/>
+
+    <!-- Red Strip -->
+    <path style="fill:#FF495C;" d="M383.753,264.995H28.001v15.857h355.752c4.38,0,7.929-3.549,7.929-7.929
+        C391.681,268.544,388.131,264.995,383.753,264.995z"/>
+
+  </g>
+</svg>

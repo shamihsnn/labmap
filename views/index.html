@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MediMap</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:;">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="/rating-styles.css">
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="search-container">
+        
+<div class="search-box">
+    <i class="fas fa-search search-icon"></i>
+    <input type="text" id="search" placeholder="Search for labs...">
+    <button class="search-button" onclick="searchLabs()">Search</button>
+    <div id="recentSearches" class="recent-searches"></div>
+</div>
+
+
+    </div>
+    
+    <div id="recentSearches" class="recent-searches"></div>
+    <div id="map"></div>
+    <div class="bottom-buttons">
+        <button class="action-button" onclick="window.location.href='/medicalchatbot'">
+            <i class="fas fa-robot"></i>
+            <span>Medical Chatbot</span>
+        </button>
+          
+        <button class="action-button" data-action="lab-finder">
+            <i class="fas fa-flask"></i>
+            <span>Lab Finder</span>
+        </button>
+
+        <button class="action-button" id="appointment-nav-btn">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Appointment</span>
+        </button>
+
+        <button class="action-button" onclick="window.location.href='/chatbot'">
+            <i class="fas fa-comments"></i>
+            <span> radiology Chatbot</span>
+        </button>
+        
+        <button class="action-button" onclick="window.location.href='/video'">
+            <i class="fas fa-video"></i>
+            <span>Video</span>
+        </button>
+        <button class="action-button" onclick="window.location.href='/symptoms'">
+            <i class="fas fa-stethoscope"></i>
+            <span>Symptoms</span>
+        </button>
+    </div>
+    <div class="lab-list" id="labList"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="map.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+    <!-- Replace the old html2canvas script with this -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="/ratings.js"></script>
+
+</body>
+<!-- Add this script at the end of the body -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const appointmentNavBtn = document.getElementById('appointment-nav-btn');
+        if (appointmentNavBtn) {
+            appointmentNavBtn.addEventListener('click', () => {
+                const modal = document.getElementById('appointment-modal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                }
+            });
+        }
+    });
+</script>
+</html>

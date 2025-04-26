@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom Checker</title>
+    <style>
+        /* Add your existing styles here */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #chatbox {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+           
+        }
+
+        h2 {
+            color: #2d3748;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 500;
+            color: #4a5568;
+            min-width: 100px;
+        }
+
+        select, input[type="number"], input[type="text"] {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        select:focus, input:focus {
+            border-color: #4299e1;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+
+        #symptomsInput {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .symptom-tag {
+            display: inline-block;
+            background: #4299e1;
+            color: white;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            font-size: 14px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .remove-symptom {
+            cursor: pointer;
+            margin-left: 8px;
+            font-weight: bold;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .remove-symptom:hover {
+            opacity: 1;
+        }
+
+        #checkSymptomsBtn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+
+        #checkSymptomsBtn:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2);
+        }
+
+        #messages {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        #messages h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        #messages ul {
+            list-style: none;
+        }
+
+        #messages li {
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        #messages li:hover {
+            transform: translateX(5px);
+        }
+
+        #messages strong {
+            color: #2d3748;
+            font-size: 1.1em;
+        }
+
+        #messages small {
+            color: #718096;
+            display: block;
+            margin-top: 5px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-message {
+            color: #e53e3e;
+            padding: 10px;
+            background: #fff5f5;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* Loading indicator */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #4a5568;
+        }
+
+        /* Accuracy indicator */
+        .accuracy-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #ebf8ff;
+            color: #2b6cb0;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatbox">
+        <h2>Symptom Checker</h2>
+        <div>
+            <label for="gender">Gender:</label>
+            <select id="gender">
+               
+                <option value="female">Female</option>
+                <option value="female">MALE</option>
+
+                <option value="in-between">in-between</option>
+                
+
+                
+
+            </select>
+            
+            <label for="yearOfBirth">Year of Birth:</label>
+            <input type="number" id="yearOfBirth" min="1900" max="2023">
+        </div>
+        
+        <div>
+            <input type="text" id="symptomsInput" placeholder="Type a symptom...">
+            <div id="selectedSymptoms"></div>
+        </div>
+        
+        <button id="checkSymptomsBtn">Check Symptoms</button>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let availableSymptoms = [];
+        let selectedSymptoms = [];
+
+        window.onload = async () => {
+            try {
+                const response = await fetch('/api/symptoms');
+                availableSymptoms = await response.json();
+                
+                const datalist = document.createElement('datalist');
+                datalist.id = 'symptomsList';
+                availableSymptoms.forEach(symptom => {
+                    const option = document.createElement('option');
+                    option.value = symptom.Name;
+                    datalist.appendChild(option);
+                });
+                document.body.appendChild(datalist);
+                document.getElementById('symptomsInput').setAttribute('list', 'symptomsList');
+            } catch (error) {
+                console.error('Error loading symptoms:', error);
+            }
+        };
+
+        document.getElementById('symptomsInput').addEventListener('change', (e) => {
+            const symptomName = e.target.value;
+            const symptom = availableSymptoms.find(s => s.Name === symptomName);
+            
+            if (symptom && !selectedSymptoms.find(s => s.ID === symptom.ID)) {
+                selectedSymptoms.push(symptom);
+                updateSelectedSymptoms();
+                e.target.value = '';
+            }
+        });
+
+        function updateSelectedSymptoms() {
+            const container = document.getElementById('selectedSymptoms');
+            container.innerHTML = selectedSymptoms.map(symptom => `
+                <span class="symptom-tag">
+                    ${symptom.Name}
+                    <span class="remove-symptom" onclick="removeSymptom(${symptom.ID})">×</span>
+                </span>
+            `).join('');
+        }
+
+        function removeSymptom(id) {
+            selectedSymptoms = selectedSymptoms.filter(s => s.ID !== id);
+            updateSelectedSymptoms();
+        }
+
+        document.getElementById('checkSymptomsBtn').addEventListener('click', async () => {
+            if (selectedSymptoms.length === 0) {
+                alert('Please select at least one symptom');
+                return;
+            }
+
+            const gender = document.getElementById('gender').value;
+            const yearOfBirth = document.getElementById('yearOfBirth').value;
+
+            if (!yearOfBirth) {
+                alert('Please enter your year of birth');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/diagnosis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        symptoms: selectedSymptoms.map(s => s.ID),
+                        gender,
+                        yearOfBirth
+                    })
+                });
+
+                const data = await response.json();
+                
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = `
+                    <h3>Diagnosis Results:</h3>
+                    <ul>
+                        ${data.map(diagnosis => `
+                            <li>
+                                <strong>${diagnosis.Issue.Name}</strong>
+                                <br>
+                                Accuracy: ${diagnosis.Issue.Accuracy}%
+                                <br>
+                                Professional Name: ${diagnosis.Issue.ProfName}
+                                <br>
+                                <small>${diagnosis.Issue.IcdName}</small>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('messages').innerHTML = `
+                    <p style="color: red;">Error getting diagnosis. Please try again.</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

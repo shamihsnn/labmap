@@ -1,0 +1,197 @@
+.rating-container {
+    margin: 10px 0;
+    padding: 10px;
+    border-top: 1px solid #eee;
+}
+
+.stars {
+    color: #ffd700;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.review-form {
+    margin-top: 10px;
+}
+
+.review-input {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.review-submit {
+    background: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.reviews-list {
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.review-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.rating-filter {
+    margin: 10px 0;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.filter-select {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.stars {
+    color: #ffd700;
+    margin: 5px 0;
+}
+
+.lab-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px;
+    margin: 5px 0;
+}
+.lab-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+    background: #4F46E5;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #4338CA;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.btn-secondary {
+    background: #F3F4F6;
+    color: #374151;
+    border: 1px solid #E5E7EB;
+}
+
+.btn-secondary:hover {
+    background: #E5E7EB;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Add a nice touch effect when clicking */
+.btn-primary:active, .btn-secondary:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+/* Rating Container Styles */
+.rating-container {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    max-width: 300px;
+}
+
+/* Stars Styling */
+.stars {
+    font-size: 18px;
+    color: #FFD700;
+    letter-spacing: 1px;
+    margin: 5px 0;
+}
+
+/* Review Form Styling */
+.review-form {
+    margin: 10px 0;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+}
+
+.rating-input {
+    width: 100%;
+    padding: 6px;
+    margin: 5px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.review-input {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    min-height: 60px;
+    font-size: 13px;
+}
+
+.review-submit {
+    background: #4F46E5;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* Reviews List Styling */
+.reviews-list {
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.review-item {
+    background: white;
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.review-item small {
+    color: #64748b;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .rating-container {
+        max-width: 100%;
+        padding: 8px;
+    }
+    
+    .reviews-list {
+        max-height: 150px;
+    }
+}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediMap Admin Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .appointment-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .appointment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn-accept {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-reject {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .appointment-status {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .status-pending { color: #ff9800; }
+        .status-accepted { color: #4CAF50; }
+        .status-rejected { color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>Admin Portal - Appointment Management</h1>
+        <div id="appointments-list">
+            <!-- Appointments will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        // Load appointments from localStorage
+        function loadAppointments() {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const appointmentsList = document.getElementById('appointments-list');
+            appointmentsList.innerHTML = '';
+
+            appointments.forEach((appointment, index) => {
+                const card = document.createElement('div');
+                card.className = 'appointment-card';
+                card.innerHTML = `
+                    <h3>Appointment at ${appointment.labName}</h3>
+                    <p><strong>Patient:</strong> ${appointment.name}</p>
+                    <p><strong>Email:</strong> ${appointment.email}</p>
+                    <p><strong>Date:</strong> ${appointment.date}</p>
+                    <p><strong>Time:</strong> ${appointment.time}</p>
+                    <p><strong>Purpose:</strong> ${appointment.purpose}</p>
+                    <div class="appointment-status status-${appointment.status || 'pending'}">
+                        Status: ${appointment.status || 'Pending'}
+                    </div>
+                    ${appointment.status ? '' : `
+                        <div class="appointment-actions">
+                            <button class="btn-accept" onclick="handleAppointment(${index}, 'accepted')">
+                                <i class="fas fa-check"></i> Accept
+                            </button>
+                            <button class="btn-reject" onclick="handleAppointment(${index}, 'rejected')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
+                    `}
+                `;
+                appointmentsList.appendChild(card);
+            });
+        }
+
+        // Handle appointment acceptance/rejection
+        async function handleAppointment(index, status) {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const appointment = appointments[index];
+            appointment.status = status;
+            
+            // Send email notification
+            try {
+                const response = await fetch('/send-appointment-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: appointment.email,
+                        status: status,
+                        labName: appointment.labName,
+                        date: appointment.date,
+                        time: appointment.time
+                    })
+                });
+                
+                if (response.ok) {
+                    localStorage.setItem('appointments', JSON.stringify(appointments));
+                    loadAppointments();
+                } else {
+                    alert('Failed to send email notification');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to process appointment');
+            }
+        }
+
+        // Load appointments when page loads
+        document.addEventListener('DOMContentLoaded', loadAppointments);
+    </script>
+</body>
+</html> 
