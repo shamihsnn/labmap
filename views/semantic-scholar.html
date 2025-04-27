@@ -97,6 +97,28 @@
             margin: 20px 0;
         }
         
+        .source-notification {
+            background-color: #fff8e1;
+            border-left: 5px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .source-notification i {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
         .results-list {
             display: flex;
             flex-direction: column;
@@ -196,6 +218,52 @@
             right: 0;
         }
         
+        /* WhatsApp floating button */
+        .whatsapp-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #25D366;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 950;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .whatsapp-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .whatsapp-btn::after {
+            content: "Chat Now";
+            position: absolute;
+            top: 50%;
+            left: 75px;
+            transform: translateY(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        .whatsapp-btn:hover::after {
+            opacity: 1;
+        }
+        
         @media (max-width: 768px) {
             .semantic-container {
                 padding: 15px;
@@ -247,7 +315,8 @@
         <div class="sidebar-content">
             <div class="sidebar-menu">
                 <ul>
-                    <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="/semantic-scholar" class="active"><i class="fas fa-search"></i> Search Articles</a></li>
+                    <li><a href="/report-vault"><i class="fas fa-file-medical-alt"></i> Report Vault</a></li>
                 </ul>
             </div>
         </div>
@@ -255,13 +324,20 @@
 
     <!-- Overlay for sidebar -->
     <div class="sidebar-overlay"></div>
+    
+    <!-- WhatsApp Chat Button -->
+    <a href="https://wa.me/923155170020" class="whatsapp-btn" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 
     <div class="semantic-container">
         <a href="/" class="back-to-home"><i class="fas fa-arrow-left"></i> Back to Home</a>
         
         <div class="semantic-header">
-            <h1>Semantic Scholar Search</h1>
-            <p>Search for academic articles in medicine, health sciences, and related fields</p>
+            <h1>Search for Academic Articles </h1>
+            <p>Search for academic articles in medicine, health sciences, and related fields through all major resources
+        <p></p>pubmed, google scholar, arxiv, etc.</p>
+            </p>
         </div>
         
         <div class="search-box-main">
@@ -326,14 +402,23 @@
                         return;
                     }
 
-                    let resultsHtml = '<div class="results-list">';
+                    let resultsHtml = '';
+                    
+                    // Display notification about source used if it's not Semantic Scholar
+                    if (data.source && data.source !== 'Semantic Scholar') {
+                        resultsHtml += `<div class="source-notification">
+                            <i class="fas fa-info-circle"></i> Semantic Scholar API unavailable. Results provided by ${data.source} instead.
+                        </div>`;
+                    }
+                    
+                    resultsHtml += '<div class="results-list">';
                     data.papers.forEach(paper => {
                         resultsHtml += `
                             <div class="article-item">
                                 <h2>${paper.title}</h2>
                                 <p class="article-authors">${paper.authors ? paper.authors.map(a => a.name).join(', ') : 'Unknown authors'}</p>
                                 <p class="article-venue">${paper.venue || 'Unknown venue'} (${paper.year || 'Unknown year'})</p>
-                                ${paper.abstract ? `<p class="article-abstract">${paper.abstract}</p>` : ''}
+                                <p class="article-abstract">${paper.abstract || 'No abstract available for this article.'}</p>
                                 <a href="${paper.url}" target="_blank" class="article-link">Read Full Article <i class="fas fa-external-link-alt"></i></a>
                             </div>
                         `;

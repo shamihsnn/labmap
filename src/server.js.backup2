@@ -389,10 +389,6 @@ app.get('/symptoms', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/symptoms.html'));
 });
 
-app.get('/report-vault', (req, res) => {
-    res.sendFile(path.join(__dirname, '../views/report-vault.html'));
-});
-
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

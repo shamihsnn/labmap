@@ -24,6 +24,52 @@
         .sidebar.active {
             right: 0;
         }
+        
+        /* WhatsApp floating button */
+        .whatsapp-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #25D366;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 950;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .whatsapp-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .whatsapp-btn::after {
+            content: "Chat Now";
+            position: absolute;
+            top: 50%;
+            left: 75px;
+            transform: translateY(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        .whatsapp-btn:hover::after {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -42,6 +88,7 @@
             <div class="sidebar-menu">
                 <ul>
                     <li><a href="/semantic-scholar"><i class="fas fa-search"></i> Search Articles</a></li>
+                    <li><a href="/report-vault"><i class="fas fa-file-medical"></i> Report Vault</a></li>
                 </ul>
             </div>
         </div>
@@ -49,6 +96,11 @@
 
     <!-- Overlay for sidebar -->
     <div class="sidebar-overlay"></div>
+    
+    <!-- WhatsApp Chat Button -->
+    <a href="https://wa.me/923155170020" class="whatsapp-btn" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 
     <div class="search-container">
         

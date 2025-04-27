@@ -1,0 +1,2633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Report Vault - MediMap</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:;">
+    <style>
+        .vault-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        
+        .vault-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .vault-header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .vault-header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .vault-tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 30px;
+        }
+        
+        .vault-tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #777;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .vault-tab.active {
+            color: #f10d0d;
+        }
+        
+        .vault-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #f10d0d;
+        }
+        
+        .vault-tab i {
+            margin-right: 8px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed #ddd;
+            padding: 40px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            background-color: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #f10d0d;
+            background-color: #fff8f8;
+        }
+        
+        .upload-area i {
+            font-size: 60px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area h3 {
+            font-size: 24px;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        
+        .upload-area p {
+            color: #777;
+            margin-bottom: 20px;
+        }
+        
+        .upload-btn {
+            background-color: #f10d0d;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .upload-btn:hover {
+            background-color: #d10a0a;
+            transform: translateY(-2px);
+        }
+        
+        /* Files Grid */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .file-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .file-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .file-preview {
+            height: 180px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        
+        .file-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .file-preview .preview-icon {
+            font-size: 60px;
+            color: #888;
+        }
+        
+        .file-info {
+            padding: 15px;
+        }
+        
+        .file-info h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-meta {
+            color: #777;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .file-actions {
+            display: flex;
+            margin-top: 12px;
+        }
+        
+        .file-action-btn {
+            flex: 1;
+            padding: 6px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #555;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .file-action-btn:hover {
+            color: #f10d0d;
+            background-color: #f9f9f9;
+        }
+        
+        .file-action-btn i {
+            margin-right: 4px;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #777;
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 22px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        /* Categories Section */
+        .category-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .category-item {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: calc(25% - 15px);
+        }
+        
+        .category-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            background-color: #f5f5f5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #f10d0d;
+        }
+        
+        .category-name {
+            font-weight: bold;
+            color: #444;
+        }
+        
+        .category-count {
+            margin-left: auto;
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 13px;
+            color: #777;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .vault-tab {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            .upload-area {
+                padding: 20px;
+            }
+            
+            .files-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+            
+            .category-item {
+                width: calc(50% - 8px);
+            }
+        }
+        
+        /* Protected vault section */
+        .vault-password {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .vault-password h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .vault-password p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .password-input:focus {
+            border-color: #f10d0d;
+            outline: none;
+        }
+        
+        .unlock-btn {
+            background-color: #f10d0d;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .unlock-btn:hover {
+            background-color: #d10a0a;
+        }
+        
+        /* Locked files styling */
+        .locked-file {
+            position: relative;
+        }
+        
+        .locked-file::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.05);
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .locked-file::after {
+            content: '\f023';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #f10d0d;
+            font-size: 18px;
+            z-index: 2;
+            background-color: rgba(255, 255, 255, 0.8);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .locked-file .file-preview {
+            filter: blur(1px);
+        }
+        
+        /* File sharing styles */
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .share-modal.active {
+            display: flex;
+        }
+        
+        .share-panel {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            width: 450px;
+            max-width: 90%;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .share-panel h3 {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .share-options {
+            margin-bottom: 20px;
+        }
+        
+        .share-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .share-option input {
+            margin-right: 10px;
+        }
+        
+        .share-option label {
+            font-weight: 500;
+            color: #444;
+        }
+        
+        .share-link-area {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .share-link-area input {
+            border: none;
+            background: none;
+            flex-grow: 1;
+            outline: none;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .share-link-area button {
+            background: none;
+            border: none;
+            color: #f10d0d;
+            cursor: pointer;
+            padding: 0 10px;
+            font-weight: bold;
+        }
+        
+        .share-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .share-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .cancel-share {
+            background-color: #f0f0f0;
+            color: #555;
+        }
+        
+        .confirm-share {
+            background-color: #f10d0d;
+            color: white;
+        }
+        
+        /* File tag styling */
+        .file-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .file-tag {
+            background-color: #f0f0f0;
+            color: #555;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+        
+        /* Tag in modal */
+        .tag-list .tag-item {
+            background-color: #f10d0d;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .tag-list .tag-item .remove-tag {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        
+        .suggested-tag {
+            transition: all 0.2s ease;
+        }
+        
+        .suggested-tag:hover {
+            background-color: #e0e0e0;
+        }
+        
+        /* Search and filter bar */
+        .search-filter-bar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .search-input-container {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        .filter-dropdown {
+            min-width: 150px;
+            position: relative;
+        }
+        
+        .filter-btn {
+            width: 100%;
+            padding: 10px 15px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sort-dropdown {
+            min-width: 150px;
+            position: relative;
+        }
+        
+        .sort-btn {
+            width: 100%;
+            padding: 10px 15px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .dropdown-menu.active {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .dropdown-item.active {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+        
+        .tag-filter-area {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .filter-tag {
+            background-color: #f0f0f0;
+            color: #555;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-tag:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .filter-tag.active {
+            background-color: #f10d0d;
+            color: white;
+        }
+        
+        .filter-tag i {
+            margin-right: 5px;
+        }
+
+        /* Hamburger Menu Button */
+        .hamburger-menu {
+            position: fixed;
+            top: 20px;
+            left: auto;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: #f10d0d;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            font-size: 18px; /* Increase icon size */
+        }
+
+        .hamburger-menu:hover {
+            background-color: #d10a0a;
+        }
+
+        /* Make sure the hamburger icon is visible */
+        .hamburger-menu i {
+            color: white;
+            font-size: 18px;
+        }
+
+        /* Back to home button styling */
+        .back-to-home {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 15px;
+            background-color: #f5f5f5;
+            color: #444;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-to-home:hover {
+            background-color: #e0e0e0;
+            transform: translateX(-5px);
+        }
+
+        .back-to-home i {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hamburger Menu Button -->
+    <div class="hamburger-menu">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MediMap Menu</h2>
+            <button class="close-sidebar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-menu">
+                <ul>
+                    <li><a href="/semantic-scholar"><i class="fas fa-search"></i> Search Articles</a></li>
+                    <li><a href="/report-vault" class="active"><i class="fas fa-file-medical-alt"></i> Report Vault</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for sidebar -->
+    <div class="sidebar-overlay"></div>
+    
+    <!-- Main Content -->
+    <div class="vault-container">
+        <a href="/" class="back-to-home"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        
+        <div class="vault-header">
+            <h1>Medical Report Vault</h1>
+            <p>Securely store and organize your medical reports, images, and health records</p>
+        </div>
+        
+        <div class="vault-tabs">
+            <div class="vault-tab active" data-tab="reports">
+                <i class="fas fa-file-medical"></i> My Reports
+            </div>
+            <div class="vault-tab" data-tab="images">
+                <i class="fas fa-x-ray"></i> Medical Images
+            </div>
+            <div class="vault-tab" data-tab="categories">
+                <i class="fas fa-folder"></i> Categories
+            </div>
+            <div class="vault-tab" data-tab="protected">
+                <i class="fas fa-lock"></i> Protected Vault
+            </div>
+            <div class="vault-tab" data-tab="activity">
+                <i class="fas fa-history"></i> Activity
+            </div>
+        </div>
+        
+        <div id="reports" class="tab-content active">
+            <div class="search-filter-bar">
+                <div class="search-input-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search reports by name, tag, or content" id="reportSearchInput">
+                </div>
+                
+                <div class="filter-dropdown">
+                    <button class="filter-btn" id="reportFilterBtn">
+                        <span>All File Types</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="reportFilterMenu">
+                        <div class="dropdown-item active" data-filter="all">All File Types</div>
+                        <div class="dropdown-item" data-filter="pdf">PDF Documents</div>
+                        <div class="dropdown-item" data-filter="doc">Word Documents</div>
+                        <div class="dropdown-item" data-filter="image">Images</div>
+                    </div>
+                </div>
+                
+                <div class="sort-dropdown">
+                    <button class="sort-btn" id="reportSortBtn">
+                        <span>Date Added</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="reportSortMenu">
+                        <div class="dropdown-item active" data-sort="date-desc">Newest First</div>
+                        <div class="dropdown-item" data-sort="date-asc">Oldest First</div>
+                        <div class="dropdown-item" data-sort="name-asc">Name (A-Z)</div>
+                        <div class="dropdown-item" data-sort="name-desc">Name (Z-A)</div>
+                        <div class="dropdown-item" data-sort="size-desc">Size (Largest)</div>
+                        <div class="dropdown-item" data-sort="size-asc">Size (Smallest)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tag-filter-area" id="reportTagFilters">
+                <!-- Will be populated with available tags -->
+            </div>
+            
+            <div class="upload-area" id="report-drop-zone">
+                <i class="fas fa-file-upload"></i>
+                <h3>Upload Medical Reports</h3>
+                <p>Drag and drop your medical reports here or click to browse files</p>
+                <p>Supported formats: PDF, DOC, DOCX, JPG, PNG</p>
+                <input type="file" id="report-file-input" style="display: none;" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                <button class="upload-btn" id="report-browse-btn">Browse Files</button>
+            </div>
+            
+            <div class="files-grid" id="reports-grid">
+                <!-- Initially empty - will be populated with files -->
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>No reports yet</h3>
+                    <p>Upload your medical reports to access them anytime, anywhere</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="images" class="tab-content">
+            <div class="upload-area" id="image-drop-zone">
+                <i class="fas fa-image"></i>
+                <h3>Upload Medical Images</h3>
+                <p>Drag and drop your X-rays, MRIs, CT scans, and other medical images</p>
+                <p>Supported formats: JPG, PNG, DICOM</p>
+                <input type="file" id="image-file-input" style="display: none;" multiple accept=".jpg,.jpeg,.png,.dcm">
+                <button class="upload-btn" id="image-browse-btn">Browse Images</button>
+            </div>
+            
+            <div class="files-grid" id="images-grid">
+                <!-- Initially empty - will be populated with images -->
+                <div class="empty-state">
+                    <i class="fas fa-images"></i>
+                    <h3>No images yet</h3>
+                    <p>Upload your medical images for easy access and sharing with healthcare providers</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="categories" class="tab-content">
+            <h3>Organize by Category</h3>
+            <div class="category-list">
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="category-name">Cardiology</div>
+                    <div class="category-count">0</div>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="category-name">Neurology</div>
+                    <div class="category-count">0</div>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-bone"></i>
+                    </div>
+                    <div class="category-name">Orthopedics</div>
+                    <div class="category-count">0</div>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-lungs"></i>
+                    </div>
+                    <div class="category-name">Pulmonology</div>
+                    <div class="category-count">0</div>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-kidneys"></i>
+                    </div>
+                    <div class="category-name">Nephrology</div>
+                    <div class="category-count">0</div>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-tablets"></i>
+                    </div>
+                    <div class="category-name">Prescriptions</div>
+                    <div class="category-count">0</div>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="category-name">Lab Results</div>
+                    <div class="category-count">0</div>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div class="category-name">Add New</div>
+                </div>
+            </div>
+            
+            <div class="files-grid" id="categories-grid">
+                <!-- This will show files from selected category -->
+                <div class="empty-state">
+                    <i class="fas fa-folder"></i>
+                    <h3>Select a category</h3>
+                    <p>Click on a category to view associated files</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="protected" class="tab-content">
+            <div class="vault-password">
+                <i class="fas fa-lock" style="font-size: 48px; color: #f10d0d; margin-bottom: 20px;"></i>
+                <h3>Protected Vault</h3>
+                <p>This area is password protected for your sensitive medical information</p>
+                <input type="password" class="password-input" placeholder="Enter your vault password">
+                <button class="unlock-btn">Unlock Vault</button>
+            </div>
+        </div>
+        
+        <div id="activity" class="tab-content">
+            <h3>File Activity History</h3>
+            <div class="activity-filters" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <button class="activity-filter active" data-filter="all">All Activity</button>
+                <button class="activity-filter" data-filter="uploads">Uploads</button>
+                <button class="activity-filter" data-filter="downloads">Downloads</button>
+                <button class="activity-filter" data-filter="shares">Shares</button>
+                <button class="activity-filter" data-filter="locks">Locks/Unlocks</button>
+            </div>
+            
+            <div class="activity-timeline">
+                <!-- Activity items will be added here -->
+                <div class="empty-state">
+                    <i class="fas fa-history"></i>
+                    <h3>No activity yet</h3>
+                    <p>Your file activity will be recorded here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="share-modal" id="shareModal">
+        <div class="share-panel">
+            <h3>Share Medical File</h3>
+            <p class="share-file-name"></p>
+            
+            <div class="share-options">
+                <div class="share-option">
+                    <input type="radio" name="shareType" id="shareLink" value="link" checked>
+                    <label for="shareLink">Generate sharing link</label>
+                </div>
+                <div class="share-option">
+                    <input type="radio" name="shareType" id="shareEmail" value="email">
+                    <label for="shareEmail">Share via email</label>
+                </div>
+                <div class="share-option">
+                    <input type="radio" name="shareType" id="shareDoctor" value="doctor">
+                    <label for="shareDoctor">Share with healthcare provider</label>
+                </div>
+            </div>
+            
+            <div id="emailInput" style="display: none; margin-bottom: 20px;">
+                <input type="email" placeholder="Enter recipient's email" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+            </div>
+            
+            <div id="doctorSelect" style="display: none; margin-bottom: 20px;">
+                <select style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="">Select healthcare provider</option>
+                    <option value="1">Dr. Sarah Johnson - Cardiologist</option>
+                    <option value="2">Dr. Michael Chen - Neurologist</option>
+                    <option value="3">Dr. Emily Williams - Primary Care</option>
+                    <option value="4">Dr. David Rodriguez - Orthopedist</option>
+                    <option value="add">+ Add new provider</option>
+                </select>
+            </div>
+            
+            <div class="share-link-area" id="linkArea">
+                <input type="text" value="https://medimap.example.com/shared/ABCD1234" readonly>
+                <button id="copyLinkBtn">Copy</button>
+            </div>
+            
+            <div class="expiration-setting">
+                <label>Link expires after:</label>
+                <select id="expirationSelect">
+                    <option value="24">24 hours</option>
+                    <option value="48">2 days</option>
+                    <option value="168">7 days</option>
+                    <option value="0">Never (not recommended)</option>
+                </select>
+            </div>
+            
+            <div class="share-security" style="margin-top: 15px; margin-bottom: 15px;">
+                <label style="display: flex; align-items: center;">
+                    <input type="checkbox" id="passwordProtect" style="margin-right: 10px;">
+                    Password protect this shared file
+                </label>
+                <div id="sharePasswordInput" style="display: none; margin-top: 10px;">
+                    <input type="password" placeholder="Enter a sharing password" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                </div>
+            </div>
+            
+            <div class="share-buttons">
+                <button class="cancel-share" id="cancelShareBtn">Cancel</button>
+                <button class="confirm-share" id="confirmShareBtn">Share</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tag-modal" id="tagModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="tag-panel" style="background-color: white; border-radius: 12px; padding: 25px; width: 450px; max-width: 90%; box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);">
+            <h3>File Tags</h3>
+            <p class="tag-file-name" style="margin-bottom: 15px; font-weight: bold;"></p>
+            
+            <div class="existing-tags" style="margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">Current Tags:</h4>
+                <div class="tag-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+            
+            <div class="tag-input-area" style="margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">Add Tags:</h4>
+                <div style="display: flex;">
+                    <input type="text" id="tagInput" placeholder="Enter tag name" style="flex-grow: 1; padding: 10px; border-radius: 8px 0 0 8px; border: 1px solid #ddd; border-right: none;">
+                    <button id="addTagBtn" style="background-color: #f10d0d; color: white; border: none; padding: 0 15px; border-radius: 0 8px 8px 0; cursor: pointer;">Add</button>
+                </div>
+            </div>
+            
+            <div class="suggested-tags" style="margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">Suggested Tags:</h4>
+                <div class="suggested-tag-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span class="suggested-tag" style="background-color: #f0f0f0; color: #555; padding: 5px 10px; border-radius: 20px; cursor: pointer;">Blood Test</span>
+                    <span class="suggested-tag" style="background-color: #f0f0f0; color: #555; padding: 5px 10px; border-radius: 20px; cursor: pointer;">MRI</span>
+                    <span class="suggested-tag" style="background-color: #f0f0f0; color: #555; padding: 5px 10px; border-radius: 20px; cursor: pointer;">X-Ray</span>
+                    <span class="suggested-tag" style="background-color: #f0f0f0; color: #555; padding: 5px 10px; border-radius: 20px; cursor: pointer;">Prescription</span>
+                    <span class="suggested-tag" style="background-color: #f0f0f0; color: #555; padding: 5px 10px; border-radius: 20px; cursor: pointer;">Surgery</span>
+                    <span class="suggested-tag" style="background-color: #f0f0f0; color: #555; padding: 5px 10px; border-radius: 20px; cursor: pointer;">Urgent</span>
+                    <span class="suggested-tag" style="background-color: #f0f0f0; color: #555; padding: 5px 10px; border-radius: 20px; cursor: pointer;">Follow-up</span>
+                </div>
+            </div>
+            
+            <div class="tag-buttons" style="display: flex; justify-content: space-between;">
+                <button class="cancel-tag" id="cancelTagBtn" style="padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background-color: #f0f0f0; color: #555;">Cancel</button>
+                <button class="save-tags" id="saveTagsBtn" style="padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background-color: #f10d0d; color: white;">Save Tags</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="version-modal" id="versionModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="version-panel" style="background-color: white; border-radius: 12px; padding: 25px; width: 550px; max-width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);">
+            <h3>File Versions</h3>
+            <p class="version-file-name" style="margin-bottom: 15px; font-weight: bold;"></p>
+            
+            <div class="version-list" style="margin-bottom: 20px;">
+                <!-- Versions will be added here -->
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end;">
+                <button id="closeVersionBtn" style="padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background-color: #f0f0f0; color: #555;">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="settings-modal" id="settingsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="settings-panel" style="background-color: white; border-radius: 12px; padding: 25px; width: 550px; max-width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);">
+            <h3>Vault Settings</h3>
+            
+            <div class="settings-section" style="margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">Security</h4>
+                <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div>
+                        <div style="font-weight: 500;">Master Password</div>
+                        <div style="color: #777; font-size: 14px;">Set a master password for your vault</div>
+                    </div>
+                    <button class="action-btn">Change</button>
+                </div>
+                <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div>
+                        <div style="font-weight: 500;">Auto-lock Vault</div>
+                        <div style="color: #777; font-size: 14px;">Lock vault after period of inactivity</div>
+                    </div>
+                    <select style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                        <option>Never</option>
+                        <option>After 5 minutes</option>
+                        <option>After 15 minutes</option>
+                        <option>After 30 minutes</option>
+                        <option>After 1 hour</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settings-section" style="margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">Storage</h4>
+                <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div>
+                        <div style="font-weight: 500;">Clear Local Cache</div>
+                        <div style="color: #777; font-size: 14px;">Clear cached files and data</div>
+                    </div>
+                    <button class="action-btn" id="clearCacheBtn">Clear</button>
+                </div>
+                <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div>
+                        <div style="font-weight: 500;">Cloud Backup</div>
+                        <div style="color: #777; font-size: 14px;">Enable automatic cloud backups</div>
+                    </div>
+                    <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                        <input type="checkbox" style="opacity: 0; width: 0; height: 0;">
+                        <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="settings-section" style="margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">Appearance</h4>
+                <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div>
+                        <div style="font-weight: 500;">Theme</div>
+                        <div style="color: #777; font-size: 14px;">Choose vault appearance</div>
+                    </div>
+                    <select style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                        <option>Light</option>
+                        <option>Dark</option>
+                        <option>System Default</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between;">
+                <button id="closeSettingsBtn" style="padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background-color: #f0f0f0; color: #555;">Cancel</button>
+                <button id="saveSettingsBtn" style="padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background-color: #f10d0d; color: white;">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="vault-actions" style="display: flex; justify-content: flex-end; margin-bottom: 20px; gap: 10px;">
+        <button class="action-btn" id="importVaultBtn">
+            <i class="fas fa-file-import"></i> Import Files
+        </button>
+        <button class="action-btn" id="exportVaultBtn">
+            <i class="fas fa-file-export"></i> Export Vault
+        </button>
+        <button class="action-btn" id="settingsBtn">
+            <i class="fas fa-cog"></i> Settings
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sidebar functionality
+            const hamburgerMenu = document.querySelector('.hamburger-menu');
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarOverlay = document.querySelector('.sidebar-overlay');
+            const closeSidebar = document.querySelector('.close-sidebar');
+
+            hamburgerMenu.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                sidebarOverlay.classList.add('active');
+            });
+
+            function closeSidebarFunc() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            }
+
+            closeSidebar.addEventListener('click', closeSidebarFunc);
+            sidebarOverlay.addEventListener('click', closeSidebarFunc);
+            
+            // Tab switching functionality
+            const tabs = document.querySelectorAll('.vault-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // File upload handling
+            const reportBrowseBtn = document.getElementById('report-browse-btn');
+            const reportFileInput = document.getElementById('report-file-input');
+            const reportDropZone = document.getElementById('report-drop-zone');
+            
+            const imageBrowseBtn = document.getElementById('image-browse-btn');
+            const imageFileInput = document.getElementById('image-file-input');
+            const imageDropZone = document.getElementById('image-drop-zone');
+            
+            // Report upload
+            reportBrowseBtn.addEventListener('click', () => {
+                reportFileInput.click();
+            });
+            
+            reportFileInput.addEventListener('change', handleReportUpload);
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                reportDropZone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            reportDropZone.addEventListener('dragenter', () => {
+                reportDropZone.classList.add('highlight');
+            });
+            
+            reportDropZone.addEventListener('dragleave', () => {
+                reportDropZone.classList.remove('highlight');
+            });
+            
+            reportDropZone.addEventListener('drop', (e) => {
+                reportDropZone.classList.remove('highlight');
+                const files = e.dataTransfer.files;
+                handleReportFiles(files);
+            });
+            
+            // Image upload
+            imageBrowseBtn.addEventListener('click', () => {
+                imageFileInput.click();
+            });
+            
+            imageFileInput.addEventListener('change', handleImageUpload);
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                imageDropZone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            imageDropZone.addEventListener('dragenter', () => {
+                imageDropZone.classList.add('highlight');
+            });
+            
+            imageDropZone.addEventListener('dragleave', () => {
+                imageDropZone.classList.remove('highlight');
+            });
+            
+            imageDropZone.addEventListener('drop', (e) => {
+                imageDropZone.classList.remove('highlight');
+                const files = e.dataTransfer.files;
+                handleImageFiles(files);
+            });
+            
+            function handleReportUpload(e) {
+                const files = e.target.files;
+                handleReportFiles(files);
+            }
+            
+            function handleImageUpload(e) {
+                const files = e.target.files;
+                handleImageFiles(files);
+            }
+            
+            function handleReportFiles(files) {
+                // Clear empty state if present
+                const emptyState = document.querySelector('#reports-grid .empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                
+                // Process each file
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    saveToLocalStorage('reports', file);
+                    addReportToGrid(file);
+                }
+            }
+            
+            function handleImageFiles(files) {
+                // Clear empty state if present
+                const emptyState = document.querySelector('#images-grid .empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                
+                // Process each file
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    saveToLocalStorage('images', file);
+                    addImageToGrid(file);
+                }
+            }
+            
+            function addReportToGrid(file) {
+                const reportGrid = document.getElementById('reports-grid');
+                const fileCard = createFileCard(file, 'report');
+                reportGrid.appendChild(fileCard);
+            }
+            
+            function addImageToGrid(file) {
+                const imagesGrid = document.getElementById('images-grid');
+                const fileCard = createFileCard(file, 'image');
+                imagesGrid.appendChild(fileCard);
+            }
+            
+            function createFileCard(file, type) {
+                const fileCard = document.createElement('div');
+                fileCard.className = 'file-card';
+                fileCard.dataset.filename = file.name;
+                
+                // Add data attributes for filtering
+                const tags = getFileTags(file.name, type);
+                if (tags && tags.length > 0) {
+                    fileCard.dataset.tags = tags.join(',');
+                    tags.forEach(tag => {
+                        fileCard.classList.add(`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`);
+                    });
+                }
+                
+                const preview = document.createElement('div');
+                preview.className = 'file-preview';
+                
+                // Display preview based on file type
+                if (type === 'image' && file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                    preview.appendChild(img);
+                } else {
+                    const icon = document.createElement('div');
+                    icon.className = 'preview-icon';
+                    
+                    if (file.name.endsWith('.pdf')) {
+                        icon.innerHTML = '<i class="fas fa-file-pdf"></i>';
+                    } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                        icon.innerHTML = '<i class="fas fa-file-word"></i>';
+                    } else if (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png')) {
+                        icon.innerHTML = '<i class="fas fa-file-image"></i>';
+                    } else {
+                        icon.innerHTML = '<i class="fas fa-file-medical"></i>';
+                    }
+                    
+                    preview.appendChild(icon);
+                }
+                
+                const info = document.createElement('div');
+                info.className = 'file-info';
+                
+                const fileName = document.createElement('h4');
+                fileName.textContent = file.name;
+                
+                const fileMeta = document.createElement('div');
+                fileMeta.className = 'file-meta';
+                
+                // Format file size
+                let fileSize;
+                if (file.size < 1024) {
+                    fileSize = file.size + ' B';
+                } else if (file.size < 1024 * 1024) {
+                    fileSize = Math.round(file.size / 1024) + ' KB';
+                } else {
+                    fileSize = Math.round(file.size / (1024 * 1024)) + ' MB';
+                }
+                
+                const date = new Date().toLocaleDateString();
+                fileMeta.innerHTML = `<span>${fileSize}</span><span>${date}</span>`;
+                
+                // Add tags display if file has tags
+                if (tags && tags.length > 0) {
+                    const tagsContainer = document.createElement('div');
+                    tagsContainer.className = 'file-tags';
+                    
+                    tags.forEach(tag => {
+                        const tagEl = document.createElement('span');
+                        tagEl.className = 'file-tag';
+                        tagEl.textContent = tag;
+                        tagsContainer.appendChild(tagEl);
+                    });
+                    
+                    info.appendChild(tagsContainer);
+                }
+                
+                const actions = document.createElement('div');
+                actions.className = 'file-actions';
+                
+                const viewBtn = document.createElement('button');
+                viewBtn.className = 'file-action-btn';
+                viewBtn.innerHTML = '<i class="fas fa-eye"></i> View';
+                viewBtn.addEventListener('click', () => {
+                    viewFile(file);
+                });
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'file-action-btn';
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+                downloadBtn.addEventListener('click', () => {
+                    downloadFile(file);
+                });
+                
+                const lockBtn = document.createElement('button');
+                lockBtn.className = 'file-action-btn';
+                
+                // Check if file is locked
+                const isLocked = isFileLocked(file.name, type);
+                if (isLocked) {
+                    lockBtn.innerHTML = '<i class="fas fa-unlock"></i> Unlock';
+                    lockBtn.title = 'Unlock this file';
+                    fileCard.classList.add('locked-file');
+                } else {
+                    lockBtn.innerHTML = '<i class="fas fa-lock"></i> Lock';
+                    lockBtn.title = 'Lock this file with password';
+                }
+                
+                lockBtn.addEventListener('click', () => {
+                    toggleFileLock(fileCard, file.name, type);
+                });
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'file-action-btn';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                deleteBtn.addEventListener('click', () => {
+                    deleteFile(fileCard, file.name, type);
+                });
+                
+                const shareBtn = document.createElement('button');
+                shareBtn.className = 'file-action-btn';
+                shareBtn.innerHTML = '<i class="fas fa-share-alt"></i> Share';
+                shareBtn.addEventListener('click', () => {
+                    openShareModal(file);
+                });
+                
+                const tagBtn = document.createElement('button');
+                tagBtn.className = 'file-action-btn';
+                tagBtn.innerHTML = '<i class="fas fa-tag"></i> Tag';
+                tagBtn.addEventListener('click', () => {
+                    openTagModal(fileCard, file.name, type);
+                });
+                
+                const versionBtn = document.createElement('button');
+                versionBtn.className = 'file-action-btn';
+                versionBtn.innerHTML = '<i class="fas fa-code-branch"></i> Versions';
+                versionBtn.addEventListener('click', () => {
+                    openVersionModal(file.name, type);
+                });
+                
+                actions.appendChild(viewBtn);
+                actions.appendChild(downloadBtn);
+                actions.appendChild(lockBtn);
+                actions.appendChild(deleteBtn);
+                actions.appendChild(shareBtn);
+                actions.appendChild(tagBtn);
+                actions.appendChild(versionBtn);
+                
+                info.appendChild(fileName);
+                info.appendChild(fileMeta);
+                info.appendChild(actions);
+                
+                fileCard.appendChild(preview);
+                fileCard.appendChild(info);
+                
+                return fileCard;
+            }
+            
+            function viewFile(file) {
+                // Check if file is locked before viewing
+                if (isFileLocked(file.name, file.type.startsWith('image/') ? 'image' : 'report')) {
+                    const fileKey = `${file.type.startsWith('image/') ? 'image' : 'report'}_${file.name}`;
+                    const lockedFiles = JSON.parse(localStorage.getItem('lockedFiles')) || {};
+                    const storedPassword = lockedFiles[fileKey].password;
+                    
+                    const enteredPassword = prompt('This file is locked. Please enter the password to view:');
+                    if (!enteredPassword || enteredPassword !== storedPassword) {
+                        alert('Incorrect password. Access denied.');
+                        return;
+                    }
+                }
+                
+                if (file.type.startsWith('image/')) {
+                    const url = URL.createObjectURL(file);
+                    window.open(url, '_blank');
+                } else if (file.type === 'application/pdf') {
+                    const url = URL.createObjectURL(file);
+                    window.open(url, '_blank');
+                } else {
+                    alert('Preview not available for this file type. Please download the file to view it.');
+                }
+            }
+            
+            function downloadFile(file) {
+                // Check if file is locked before downloading
+                if (isFileLocked(file.name, file.type.startsWith('image/') ? 'image' : 'report')) {
+                    const fileKey = `${file.type.startsWith('image/') ? 'image' : 'report'}_${file.name}`;
+                    const lockedFiles = JSON.parse(localStorage.getItem('lockedFiles')) || {};
+                    const storedPassword = lockedFiles[fileKey].password;
+                    
+                    const enteredPassword = prompt('This file is locked. Please enter the password to download:');
+                    if (!enteredPassword || enteredPassword !== storedPassword) {
+                        alert('Incorrect password. Access denied.');
+                        return;
+                    }
+                }
+                
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            function deleteFile(fileCard, fileName, type) {
+                if (confirm('Are you sure you want to delete this file?')) {
+                    fileCard.remove();
+                    removeFromLocalStorage(type, fileName);
+                    
+                    // Check if grid is empty and add empty state if needed
+                    const grid = document.getElementById(`${type}s-grid`);
+                    if (!grid.hasChildNodes()) {
+                        const emptyState = document.createElement('div');
+                        emptyState.className = 'empty-state';
+                        emptyState.innerHTML = `
+                            <i class="fas fa-${type === 'report' ? 'folder-open' : 'images'}"></i>
+                            <h3>No ${type}s yet</h3>
+                            <p>Upload your medical ${type}s to access them anytime, anywhere</p>
+                        `;
+                        grid.appendChild(emptyState);
+                    }
+                }
+            }
+            
+            // LocalStorage functions
+            function saveToLocalStorage(type, file) {
+                // In a real app, you would upload to server
+                // Here we'll just store the file name and metadata
+                let files = JSON.parse(localStorage.getItem(`${type}Files`)) || [];
+                
+                // Add file info (not the actual file)
+                files.push({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    date: new Date().toISOString()
+                });
+                
+                localStorage.setItem(`${type}Files`, JSON.stringify(files));
+            }
+            
+            function removeFromLocalStorage(type, fileName) {
+                let files = JSON.parse(localStorage.getItem(`${type}Files`)) || [];
+                files = files.filter(file => file.name !== fileName);
+                localStorage.setItem(`${type}Files`, JSON.stringify(files));
+            }
+            
+            // Category handling
+            const categoryItems = document.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    // In a real app, you would load files by category
+                    // For demo purposes, we'll just show a message
+                    const categoryName = item.querySelector('.category-name').textContent;
+                    if (categoryName === 'Add New') {
+                        const newCategory = prompt('Enter new category name:');
+                        if (newCategory) {
+                            alert(`Category "${newCategory}" created!`);
+                            // In a real app, you would add the category to the list
+                        }
+                    } else {
+                        const grid = document.getElementById('categories-grid');
+                        grid.innerHTML = ''; // Clear current content
+                        
+                        const message = document.createElement('div');
+                        message.className = 'empty-state';
+                        message.innerHTML = `
+                            <i class="fas fa-folder-open"></i>
+                            <h3>${categoryName} Category</h3>
+                            <p>No files in this category yet. Upload files and assign them to this category.</p>
+                        `;
+                        grid.appendChild(message);
+                    }
+                });
+            });
+            
+            // Protected vault handling
+            const unlockBtn = document.querySelector('.unlock-btn');
+            const passwordInput = document.querySelector('.password-input');
+            
+            unlockBtn.addEventListener('click', () => {
+                const password = passwordInput.value.trim();
+                if (password === '') {
+                    alert('Please enter your password');
+                    return;
+                }
+                
+                // For demo, any password works
+                // In a real app, you would verify with server
+                const protectedTab = document.getElementById('protected');
+                protectedTab.innerHTML = `
+                    <div class="files-grid">
+                        <div class="empty-state">
+                            <i class="fas fa-lock-open"></i>
+                            <h3>Protected Vault Unlocked</h3>
+                            <p>This area is for your most sensitive medical information. No files have been added yet.</p>
+                            <div style="margin-top: 20px;">
+                                <button class="upload-btn" id="protected-upload-btn">Upload Protected File</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add functionality to the protected upload button
+                const protectedUploadBtn = document.getElementById('protected-upload-btn');
+                if (protectedUploadBtn) {
+                    protectedUploadBtn.addEventListener('click', () => {
+                        alert('In a real application, this would open a secure file upload dialog.');
+                    });
+                }
+            });
+            
+            // Load saved files on page load
+            function loadSavedFiles() {
+                // Load reports
+                const savedReports = JSON.parse(localStorage.getItem('reportsFiles')) || [];
+                if (savedReports.length > 0) {
+                    const emptyState = document.querySelector('#reports-grid .empty-state');
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+                    
+                    savedReports.forEach(fileInfo => {
+                        // Create a dummy file object since we don't store the actual file
+                        const dummyFile = new File([""], fileInfo.name, { type: fileInfo.type });
+                        const fileCard = createFileCard(dummyFile, 'report');
+                        document.getElementById('reports-grid').appendChild(fileCard);
+                    });
+                }
+                
+                // Load images
+                const savedImages = JSON.parse(localStorage.getItem('imagesFiles')) || [];
+                if (savedImages.length > 0) {
+                    const emptyState = document.querySelector('#images-grid .empty-state');
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+                    
+                    savedImages.forEach(fileInfo => {
+                        // Create a dummy file object since we don't store the actual file
+                        const dummyFile = new File([""], fileInfo.name, { type: fileInfo.type });
+                        const fileCard = createFileCard(dummyFile, 'image');
+                        document.getElementById('images-grid').appendChild(fileCard);
+                    });
+                }
+            }
+            
+            // Call this function to load any previously saved files (for demo only)
+            loadSavedFiles();
+
+            function isFileLocked(fileName, type) {
+                const lockedFiles = JSON.parse(localStorage.getItem('lockedFiles')) || {};
+                return lockedFiles[`${type}_${fileName}`] !== undefined;
+            }
+            
+            function toggleFileLock(fileCard, fileName, type) {
+                const fileKey = `${type}_${fileName}`;
+                let lockedFiles = JSON.parse(localStorage.getItem('lockedFiles')) || {};
+                
+                if (isFileLocked(fileName, type)) {
+                    // File is locked, prompt for password to unlock
+                    const storedPassword = lockedFiles[fileKey].password;
+                    const enteredPassword = prompt('Enter password to unlock this file:');
+                    
+                    if (!enteredPassword) {
+                        return; // User cancelled
+                    }
+                    
+                    if (enteredPassword === storedPassword) {
+                        // Correct password, unlock file
+                        delete lockedFiles[fileKey];
+                        localStorage.setItem('lockedFiles', JSON.stringify(lockedFiles));
+                        
+                        // Update UI
+                        fileCard.classList.remove('locked-file');
+                        const lockBtn = fileCard.querySelector('.file-action-btn:nth-child(3)');
+                        lockBtn.innerHTML = '<i class="fas fa-lock"></i> Lock';
+                        lockBtn.title = 'Lock this file with password';
+                        
+                        alert('File unlocked successfully');
+                    } else {
+                        alert('Incorrect password. File remains locked.');
+                    }
+                } else {
+                    // File is not locked, prompt for password to lock
+                    const password = prompt('Enter a password to lock this file:');
+                    if (!password) {
+                        return; // User cancelled
+                    }
+                    
+                    // Optional: ask for confirmation
+                    const confirmPassword = prompt('Confirm your password:');
+                    if (password !== confirmPassword) {
+                        alert('Passwords do not match. File not locked.');
+                        return;
+                    }
+                    
+                    // Save lock info
+                    lockedFiles[fileKey] = {
+                        password: password,
+                        lockedDate: new Date().toISOString()
+                    };
+                    localStorage.setItem('lockedFiles', JSON.stringify(lockedFiles));
+                    
+                    // Update UI
+                    fileCard.classList.add('locked-file');
+                    const lockBtn = fileCard.querySelector('.file-action-btn:nth-child(3)');
+                    lockBtn.innerHTML = '<i class="fas fa-unlock"></i> Unlock';
+                    lockBtn.title = 'Unlock this file';
+                    
+                    alert('File locked successfully. You will need the password to access this file.');
+                }
+            }
+
+            // File sharing functionality
+            function openShareModal(file) {
+                const modal = document.getElementById('shareModal');
+                const fileNameEl = modal.querySelector('.share-file-name');
+                fileNameEl.textContent = file.name;
+                
+                // Generate a random share ID
+                const shareId = Math.random().toString(36).substring(2, 10).toUpperCase();
+                const shareLink = `https://medimap.example.com/shared/${shareId}`;
+                
+                document.querySelector('.share-link-area input').value = shareLink;
+                
+                modal.classList.add('active');
+                
+                // Show/hide appropriate fields based on share type selection
+                const shareTypeRadios = document.querySelectorAll('input[name="shareType"]');
+                shareTypeRadios.forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        document.getElementById('emailInput').style.display = 'none';
+                        document.getElementById('doctorSelect').style.display = 'none';
+                        document.getElementById('linkArea').style.display = 'none';
+                        
+                        if (radio.value === 'email') {
+                            document.getElementById('emailInput').style.display = 'block';
+                        } else if (radio.value === 'doctor') {
+                            document.getElementById('doctorSelect').style.display = 'block';
+                        } else {
+                            document.getElementById('linkArea').style.display = 'flex';
+                        }
+                    });
+                });
+                
+                // Password protection checkbox
+                const passwordProtectCheck = document.getElementById('passwordProtect');
+                const sharePasswordInput = document.getElementById('sharePasswordInput');
+                
+                passwordProtectCheck.addEventListener('change', () => {
+                    sharePasswordInput.style.display = passwordProtectCheck.checked ? 'block' : 'none';
+                });
+                
+                // Copy link button
+                const copyLinkBtn = document.getElementById('copyLinkBtn');
+                copyLinkBtn.addEventListener('click', () => {
+                    const linkInput = document.querySelector('.share-link-area input');
+                    linkInput.select();
+                    document.execCommand('copy');
+                    copyLinkBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyLinkBtn.textContent = 'Copy';
+                    }, 2000);
+                });
+                
+                // Cancel button
+                const cancelBtn = document.getElementById('cancelShareBtn');
+                cancelBtn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                });
+                
+                // Share/Confirm button
+                const confirmBtn = document.getElementById('confirmShareBtn');
+                confirmBtn.addEventListener('click', () => {
+                    const shareType = document.querySelector('input[name="shareType"]:checked').value;
+                    const expirationDays = document.getElementById('expirationSelect').value;
+                    const isPasswordProtected = document.getElementById('passwordProtect').checked;
+                    
+                    // Get the appropriate sharing method info
+                    let recipient = '';
+                    if (shareType === 'email') {
+                        recipient = document.querySelector('#emailInput input').value;
+                        if (!recipient) {
+                            alert('Please enter a recipient email');
+                            return;
+                        }
+                    } else if (shareType === 'doctor') {
+                        const select = document.querySelector('#doctorSelect select');
+                        recipient = select.options[select.selectedIndex].text;
+                        if (select.value === '') {
+                            alert('Please select a healthcare provider');
+                            return;
+                        }
+                        
+                        if (select.value === 'add') {
+                            const newProvider = prompt('Enter healthcare provider name:');
+                            if (newProvider) {
+                                recipient = newProvider;
+                                // In real app, we would add this provider to the list
+                            } else {
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // Get password if set
+                    let sharePassword = '';
+                    if (isPasswordProtected) {
+                        sharePassword = document.querySelector('#sharePasswordInput input').value;
+                        if (!sharePassword) {
+                            alert('Please enter a sharing password');
+                            return;
+                        }
+                    }
+                    
+                    // In a real app, we would send this info to the server
+                    // For this demo, we'll just show a success message
+                    alert(`File "${file.name}" shared successfully via ${shareType}!`);
+                    
+                    // Store share info in local storage (for demo purposes)
+                    saveShareToLocalStorage(file.name, {
+                        shareType,
+                        recipient,
+                        shareLink,
+                        expiration: expirationDays,
+                        isPasswordProtected,
+                        sharePassword,
+                        sharedDate: new Date().toISOString()
+                    });
+                    
+                    modal.classList.remove('active');
+                });
+            }
+            
+            function saveShareToLocalStorage(fileName, shareInfo) {
+                let shareHistory = JSON.parse(localStorage.getItem('shareHistory')) || {};
+                if (!shareHistory[fileName]) {
+                    shareHistory[fileName] = [];
+                }
+                shareHistory[fileName].push(shareInfo);
+                localStorage.setItem('shareHistory', JSON.stringify(shareHistory));
+            }
+
+            // File tagging system
+            function getFileTags(fileName, type) {
+                const taggedFiles = JSON.parse(localStorage.getItem('taggedFiles')) || {};
+                const fileKey = `${type}_${fileName}`;
+                return taggedFiles[fileKey] || [];
+            }
+            
+            function openTagModal(fileCard, fileName, type) {
+                const modal = document.getElementById('tagModal');
+                const fileNameEl = modal.querySelector('.tag-file-name');
+                fileNameEl.textContent = fileName;
+                
+                // Get existing tags for this file
+                const fileKey = `${type}_${fileName}`;
+                const taggedFiles = JSON.parse(localStorage.getItem('taggedFiles')) || {};
+                const existingTags = taggedFiles[fileKey] || [];
+                
+                // Display existing tags
+                const tagList = modal.querySelector('.tag-list');
+                tagList.innerHTML = '';
+                
+                existingTags.forEach(tag => {
+                    addTagToList(tag, tagList);
+                });
+                
+                // Set up tag input
+                const tagInput = document.getElementById('tagInput');
+                const addTagBtn = document.getElementById('addTagBtn');
+                
+                function handleAddTag() {
+                    const tagName = tagInput.value.trim();
+                    if (tagName) {
+                        if (!existingTags.includes(tagName)) {
+                            existingTags.push(tagName);
+                            addTagToList(tagName, tagList);
+                        }
+                        tagInput.value = '';
+                    }
+                }
+                
+                // Clear previous event listeners
+                const newAddTagBtn = addTagBtn.cloneNode(true);
+                addTagBtn.parentNode.replaceChild(newAddTagBtn, addTagBtn);
+                
+                // Add new event listeners
+                newAddTagBtn.addEventListener('click', handleAddTag);
+                tagInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        handleAddTag();
+                    }
+                });
+                
+                // Set up suggested tags
+                const suggestedTags = modal.querySelectorAll('.suggested-tag');
+                suggestedTags.forEach(tag => {
+                    // Clear previous event listeners
+                    const newTag = tag.cloneNode(true);
+                    tag.parentNode.replaceChild(newTag, tag);
+                    
+                    // Add new event listener
+                    newTag.addEventListener('click', () => {
+                        const tagName = newTag.textContent;
+                        if (!existingTags.includes(tagName)) {
+                            existingTags.push(tagName);
+                            addTagToList(tagName, tagList);
+                        }
+                    });
+                });
+                
+                // Cancel button
+                const cancelBtn = document.getElementById('cancelTagBtn');
+                cancelBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                });
+                
+                // Save button
+                const saveBtn = document.getElementById('saveTagsBtn');
+                saveBtn.addEventListener('click', () => {
+                    // Save tags to localStorage
+                    taggedFiles[fileKey] = existingTags;
+                    localStorage.setItem('taggedFiles', JSON.stringify(taggedFiles));
+                    
+                    // Update file card
+                    fileCard.dataset.tags = existingTags.join(',');
+                    
+                    // Remove all tag classes
+                    const classList = [...fileCard.classList];
+                    classList.forEach(cls => {
+                        if (cls.startsWith('tag-')) {
+                            fileCard.classList.remove(cls);
+                        }
+                    });
+                    
+                    // Add updated tag classes
+                    existingTags.forEach(tag => {
+                        fileCard.classList.add(`tag-${tag.toLowerCase().replace(/\s+/g, '-')}`);
+                    });
+                    
+                    // Update tag display in file card
+                    let tagsContainer = fileCard.querySelector('.file-tags');
+                    if (!tagsContainer) {
+                        tagsContainer = document.createElement('div');
+                        tagsContainer.className = 'file-tags';
+                        const fileInfo = fileCard.querySelector('.file-info');
+                        const fileMeta = fileCard.querySelector('.file-meta');
+                        fileInfo.insertBefore(tagsContainer, fileMeta.nextSibling);
+                    } else {
+                        tagsContainer.innerHTML = '';
+                    }
+                    
+                    existingTags.forEach(tag => {
+                        const tagEl = document.createElement('span');
+                        tagEl.className = 'file-tag';
+                        tagEl.textContent = tag;
+                        tagsContainer.appendChild(tagEl);
+                    });
+                    
+                    // Close modal
+                    modal.style.display = 'none';
+                    
+                    // Update tag filters
+                    updateTagFilters();
+                });
+                
+                // Show the modal
+                modal.style.display = 'flex';
+            }
+            
+            function addTagToList(tagName, container) {
+                const tagItem = document.createElement('div');
+                tagItem.className = 'tag-item';
+                tagItem.innerHTML = `
+                    ${tagName}
+                    <span class="remove-tag">✕</span>
+                `;
+                
+                // Add remove tag functionality
+                const removeBtn = tagItem.querySelector('.remove-tag');
+                removeBtn.addEventListener('click', () => {
+                    // Get the current list of tags from the container
+                    const tagItems = container.querySelectorAll('.tag-item');
+                    const tags = [];
+                    
+                    // Rebuild the tags array, excluding the removed tag
+                    tagItems.forEach(item => {
+                        const itemText = item.textContent.trim().replace('✕', '').trim();
+                        if (itemText !== tagName) {
+                            tags.push(itemText);
+                        }
+                    });
+                    
+                    // Update the local variable if we're inside the modal function
+                    if (typeof existingTags !== 'undefined') {
+                        existingTags = tags;
+                    }
+                    
+                    // Remove the tag element
+                    tagItem.remove();
+                });
+                
+                container.appendChild(tagItem);
+            }
+            
+            function updateTagFilters() {
+                const taggedFiles = JSON.parse(localStorage.getItem('taggedFiles')) || {};
+                const allTags = new Set();
+                
+                // Collect all unique tags
+                Object.values(taggedFiles).forEach(tags => {
+                    tags.forEach(tag => allTags.add(tag));
+                });
+                
+                // Update report tag filters
+                const reportTagFilters = document.getElementById('reportTagFilters');
+                reportTagFilters.innerHTML = '';
+                
+                if (allTags.size > 0) {
+                    allTags.forEach(tag => {
+                        const filterTag = document.createElement('div');
+                        filterTag.className = 'filter-tag';
+                        filterTag.dataset.tag = tag;
+                        filterTag.innerHTML = `<i class="fas fa-tag"></i> ${tag}`;
+                        
+                        filterTag.addEventListener('click', () => {
+                            filterTag.classList.toggle('active');
+                            applyFilters();
+                        });
+                        
+                        reportTagFilters.appendChild(filterTag);
+                    });
+                }
+            }
+            
+            function applyFilters() {
+                const selectedTags = Array.from(document.querySelectorAll('.filter-tag.active')).map(tag => tag.dataset.tag);
+                const reportGrid = document.getElementById('reports-grid');
+                const fileCards = reportGrid.querySelectorAll('.file-card');
+                
+                fileCards.forEach(card => {
+                    const cardTags = card.dataset.tags ? card.dataset.tags.split(',') : [];
+                    
+                    if (selectedTags.length === 0) {
+                        // No tag filters active, show all
+                        card.style.display = '';
+                    } else {
+                        // Check if card has at least one of the selected tags
+                        const hasSelectedTag = selectedTags.some(tag => cardTags.includes(tag));
+                        card.style.display = hasSelectedTag ? '' : 'none';
+                    }
+                });
+            }
+            
+            // Search functionality
+            const reportSearchInput = document.getElementById('reportSearchInput');
+            reportSearchInput.addEventListener('input', () => {
+                const searchTerm = reportSearchInput.value.toLowerCase().trim();
+                const reportGrid = document.getElementById('reports-grid');
+                const fileCards = reportGrid.querySelectorAll('.file-card');
+                
+                fileCards.forEach(card => {
+                    const fileName = card.dataset.filename.toLowerCase();
+                    const cardTags = card.dataset.tags ? card.dataset.tags.toLowerCase() : '';
+                    
+                    if (searchTerm === '') {
+                        card.style.display = '';
+                    } else {
+                        const matchesSearch = fileName.includes(searchTerm) || cardTags.includes(searchTerm);
+                        card.style.display = matchesSearch ? '' : 'none';
+                    }
+                });
+            });
+            
+            // Dropdown functionality
+            function setupDropdown(buttonId, menuId) {
+                const button = document.getElementById(buttonId);
+                const menu = document.getElementById(menuId);
+                
+                button.addEventListener('click', () => {
+                    menu.classList.toggle('active');
+                });
+                
+                // Close when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!button.contains(e.target) && !menu.contains(e.target)) {
+                        menu.classList.remove('active');
+                    }
+                });
+                
+                // Handle menu item click
+                const items = menu.querySelectorAll('.dropdown-item');
+                items.forEach(item => {
+                    item.addEventListener('click', () => {
+                        items.forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        button.querySelector('span').textContent = item.textContent;
+                        menu.classList.remove('active');
+                        
+                        if (menuId === 'reportFilterMenu') {
+                            applyFileTypeFilter(item.dataset.filter);
+                        } else if (menuId === 'reportSortMenu') {
+                            applySorting(item.dataset.sort);
+                        }
+                    });
+                });
+            }
+            
+            function applyFileTypeFilter(filter) {
+                const reportGrid = document.getElementById('reports-grid');
+                const fileCards = reportGrid.querySelectorAll('.file-card');
+                
+                fileCards.forEach(card => {
+                    const fileName = card.dataset.filename.toLowerCase();
+                    
+                    if (filter === 'all') {
+                        card.style.display = '';
+                    } else if (filter === 'pdf' && fileName.endsWith('.pdf')) {
+                        card.style.display = '';
+                    } else if (filter === 'doc' && (fileName.endsWith('.doc') || fileName.endsWith('.docx'))) {
+                        card.style.display = '';
+                    } else if (filter === 'image' && (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png'))) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+            
+            function applySorting(sortType) {
+                const reportGrid = document.getElementById('reports-grid');
+                const fileCards = Array.from(reportGrid.querySelectorAll('.file-card'));
+                
+                fileCards.sort((a, b) => {
+                    const aName = a.dataset.filename;
+                    const bName = b.dataset.filename;
+                    
+                    // This is simplified - in a real app you'd have more data to sort by
+                    if (sortType === 'name-asc') {
+                        return aName.localeCompare(bName);
+                    } else if (sortType === 'name-desc') {
+                        return bName.localeCompare(aName);
+                    } else if (sortType === 'date-asc') {
+                        // In a real app, you'd use actual dates
+                        return -1; // Placeholder
+                    } else if (sortType === 'date-desc') {
+                        return 1; // Placeholder 
+                    } 
+                    
+                    return 0;
+                });
+                
+                // Remove and reappend in new order
+                fileCards.forEach(card => reportGrid.appendChild(card));
+            }
+
+            // Import/Export and Settings functionality
+            const importVaultBtn = document.getElementById('importVaultBtn');
+            const exportVaultBtn = document.getElementById('exportVaultBtn');
+            const settingsBtn = document.getElementById('settingsBtn');
+            
+            importVaultBtn.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                const importedData = JSON.parse(event.target.result);
+                                
+                                // Validate the imported data
+                                if (!importedData.version || !importedData.files) {
+                                    throw new Error('Invalid vault file format');
+                                }
+                                
+                                // Merge with existing data or replace
+                                if (confirm('Do you want to merge with existing files? Click Cancel to replace all files.')) {
+                                    // Merge implementation
+                                    // (In a real app, you'd have more complex merging logic)
+                                    
+                                    // Store the imported data
+                                    if (importedData.reportsFiles) {
+                                        const existing = JSON.parse(localStorage.getItem('reportsFiles')) || [];
+                                        localStorage.setItem('reportsFiles', JSON.stringify([...existing, ...importedData.reportsFiles]));
+                                    }
+                                    
+                                    if (importedData.imagesFiles) {
+                                        const existing = JSON.parse(localStorage.getItem('imagesFiles')) || [];
+                                        localStorage.setItem('imagesFiles', JSON.stringify([...existing, ...importedData.imagesFiles]));
+                                    }
+                                    
+                                    if (importedData.taggedFiles) {
+                                        const existing = JSON.parse(localStorage.getItem('taggedFiles')) || {};
+                                        localStorage.setItem('taggedFiles', JSON.stringify({...existing, ...importedData.taggedFiles}));
+                                    }
+                                    
+                                    if (importedData.lockedFiles) {
+                                        const existing = JSON.parse(localStorage.getItem('lockedFiles')) || {};
+                                        localStorage.setItem('lockedFiles', JSON.stringify({...existing, ...importedData.lockedFiles}));
+                                    }
+                                } else {
+                                    // Replace all data
+                                    if (importedData.reportsFiles) {
+                                        localStorage.setItem('reportsFiles', JSON.stringify(importedData.reportsFiles));
+                                    }
+                                    
+                                    if (importedData.imagesFiles) {
+                                        localStorage.setItem('imagesFiles', JSON.stringify(importedData.imagesFiles));
+                                    }
+                                    
+                                    if (importedData.taggedFiles) {
+                                        localStorage.setItem('taggedFiles', JSON.stringify(importedData.taggedFiles));
+                                    }
+                                    
+                                    if (importedData.lockedFiles) {
+                                        localStorage.setItem('lockedFiles', JSON.stringify(importedData.lockedFiles));
+                                    }
+                                }
+                                
+                                // Log the import to activity
+                                addActivityLog({
+                                    type: 'import',
+                                    date: new Date().toISOString(),
+                                    details: `Imported ${importedData.files.length} files`
+                                });
+                                
+                                alert('Import successful! Refreshing your vault...');
+                                window.location.reload();
+                            } catch (error) {
+                                alert(`Import failed: ${error.message}`);
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                };
+                
+                input.click();
+            });
+            
+            exportVaultBtn.addEventListener('click', () => {
+                // Prepare export data
+                const exportData = {
+                    version: '1.0',
+                    exportDate: new Date().toISOString(),
+                    reportsFiles: JSON.parse(localStorage.getItem('reportsFiles')) || [],
+                    imagesFiles: JSON.parse(localStorage.getItem('imagesFiles')) || [],
+                    taggedFiles: JSON.parse(localStorage.getItem('taggedFiles')) || {},
+                    lockedFiles: JSON.parse(localStorage.getItem('lockedFiles')) || {},
+                    shareHistory: JSON.parse(localStorage.getItem('shareHistory')) || {},
+                    get files() {
+                        return [...this.reportsFiles, ...this.imagesFiles];
+                    }
+                };
+                
+                // Create download link
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `medimap_vault_export_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Log the export to activity
+                addActivityLog({
+                    type: 'export',
+                    date: new Date().toISOString(),
+                    details: `Exported ${exportData.files.length} files`
+                });
+            });
+            
+            settingsBtn.addEventListener('click', () => {
+                const settingsModal = document.getElementById('settingsModal');
+                settingsModal.style.display = 'flex';
+                
+                // Handle settings modal close
+                const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+                closeSettingsBtn.addEventListener('click', () => {
+                    settingsModal.style.display = 'none';
+                });
+                
+                // Handle settings save
+                const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+                saveSettingsBtn.addEventListener('click', () => {
+                    // In a real app, you would save settings here
+                    alert('Settings saved!');
+                    settingsModal.style.display = 'none';
+                });
+                
+                // Clear cache button
+                const clearCacheBtn = document.getElementById('clearCacheBtn');
+                clearCacheBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to clear all cached files? This will not delete your files, but may require re-uploading them.')) {
+                        // Clear cache logic would go here
+                        alert('Cache cleared!');
+                    }
+                });
+            });
+            
+            // File versions functionality
+            function openVersionModal(fileName, type) {
+                const modal = document.getElementById('versionModal');
+                const fileNameEl = modal.querySelector('.version-file-name');
+                fileNameEl.textContent = fileName;
+                
+                // Get file versions (in a real app, this would fetch from a server)
+                // For demo, we'll create dummy versions
+                const versionList = modal.querySelector('.version-list');
+                versionList.innerHTML = '';
+                
+                // Generate some dummy versions
+                const now = new Date();
+                const versions = [
+                    {
+                        id: 'v3',
+                        date: new Date(now.getTime()).toLocaleString(),
+                        size: '1.2 MB',
+                        author: 'You',
+                        current: true
+                    },
+                    {
+                        id: 'v2',
+                        date: new Date(now.getTime() - 86400000).toLocaleString(), // 1 day ago
+                        size: '1.1 MB',
+                        author: 'You',
+                        current: false
+                    },
+                    {
+                        id: 'v1',
+                        date: new Date(now.getTime() - 86400000 * 7).toLocaleString(), // 7 days ago
+                        size: '1.0 MB',
+                        author: 'You',
+                        current: false
+                    }
+                ];
+                
+                versions.forEach(version => {
+                    const versionItem = document.createElement('div');
+                    versionItem.style.display = 'flex';
+                    versionItem.style.alignItems = 'center';
+                    versionItem.style.padding = '15px';
+                    versionItem.style.borderBottom = '1px solid #eee';
+                    versionItem.style.justifyContent = 'space-between';
+                    
+                    const versionInfo = document.createElement('div');
+                    versionInfo.innerHTML = `
+                        <div style="font-weight: 500; display: flex; align-items: center;">
+                            ${version.id} 
+                            ${version.current ? '<span style="margin-left: 10px; font-size: 12px; background: #e0f7e0; color: #2a9d2a; padding: 2px 8px; border-radius: 10px;">Current</span>' : ''}
+                        </div>
+                        <div style="color: #777; font-size: 14px;">${version.date} • ${version.size} • By ${version.author}</div>
+                    `;
+                    
+                    const versionActions = document.createElement('div');
+                    versionActions.style.display = 'flex';
+                    versionActions.style.gap = '10px';
+                    
+                    if (!version.current) {
+                        const restoreBtn = document.createElement('button');
+                        restoreBtn.className = 'action-btn';
+                        restoreBtn.textContent = 'Restore';
+                        restoreBtn.addEventListener('click', () => {
+                            if (confirm(`Are you sure you want to restore to ${version.id}? This will replace the current version.`)) {
+                                alert(`Restored to ${version.id}`);
+                                modal.style.display = 'none';
+                            }
+                        });
+                        versionActions.appendChild(restoreBtn);
+                    }
+                    
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'action-btn';
+                    viewBtn.textContent = 'View';
+                    viewBtn.addEventListener('click', () => {
+                        alert(`Viewing ${version.id} of ${fileName}`);
+                    });
+                    versionActions.appendChild(viewBtn);
+                    
+                    versionItem.appendChild(versionInfo);
+                    versionItem.appendChild(versionActions);
+                    versionList.appendChild(versionItem);
+                });
+                
+                // Handle modal close
+                const closeVersionBtn = document.getElementById('closeVersionBtn');
+                closeVersionBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                });
+                
+                // Show the modal
+                modal.style.display = 'flex';
+            }
+            
+            // Activity log
+            function addActivityLog(activity) {
+                let activities = JSON.parse(localStorage.getItem('activityLog')) || [];
+                activities.unshift(activity); // Add to beginning
+                
+                // Keep only last 100 activities
+                if (activities.length > 100) {
+                    activities = activities.slice(0, 100);
+                }
+                
+                localStorage.setItem('activityLog', JSON.stringify(activities));
+                updateActivityTab();
+            }
+            
+            function updateActivityTab() {
+                const activityTimeline = document.querySelector('.activity-timeline');
+                const activities = JSON.parse(localStorage.getItem('activityLog')) || [];
+                
+                if (activities.length === 0) {
+                    activityTimeline.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-history"></i>
+                            <h3>No activity yet</h3>
+                            <p>Your file activity will be recorded here</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                activityTimeline.innerHTML = '';
+                
+                activities.forEach(activity => {
+                    const activityItem = document.createElement('div');
+                    activityItem.className = `activity-item ${activity.type}`;
+                    activityItem.style.display = 'flex';
+                    activityItem.style.padding = '15px';
+                    activityItem.style.borderBottom = '1px solid #eee';
+                    
+                    let icon, title;
+                    switch(activity.type) {
+                        case 'upload':
+                            icon = 'fa-file-upload';
+                            title = 'File Uploaded';
+                            break;
+                        case 'download':
+                            icon = 'fa-file-download';
+                            title = 'File Downloaded';
+                            break;
+                        case 'share':
+                            icon = 'fa-share-alt';
+                            title = 'File Shared';
+                            break;
+                        case 'lock':
+                            icon = 'fa-lock';
+                            title = 'File Locked';
+                            break;
+                        case 'unlock':
+                            icon = 'fa-unlock';
+                            title = 'File Unlocked';
+                            break;
+                        case 'import':
+                            icon = 'fa-file-import';
+                            title = 'Files Imported';
+                            break;
+                        case 'export':
+                            icon = 'fa-file-export';
+                            title = 'Files Exported';
+                            break;
+                        default:
+                            icon = 'fa-info-circle';
+                            title = 'Activity';
+                    }
+                    
+                    const date = new Date(activity.date).toLocaleString();
+                    
+                    activityItem.innerHTML = `
+                        <div style="margin-right: 15px; width: 40px; height: 40px; background-color: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #f10d0d;">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <div style="font-weight: 500;">${title}</div>
+                            <div style="color: #777; font-size: 14px;">${activity.details || ''}</div>
+                            <div style="color: #999; font-size: 12px;">${date}</div>
+                        </div>
+                    `;
+                    
+                    activityTimeline.appendChild(activityItem);
+                });
+                
+                // Activity filters
+                const activityFilters = document.querySelectorAll('.activity-filter');
+                activityFilters.forEach(filter => {
+                    filter.addEventListener('click', () => {
+                        activityFilters.forEach(f => f.classList.remove('active'));
+                        filter.classList.add('active');
+                        
+                        const filterType = filter.dataset.filter;
+                        const activityItems = document.querySelectorAll('.activity-item');
+                        
+                        activityItems.forEach(item => {
+                            if (filterType === 'all') {
+                                item.style.display = 'flex';
+                            } else if (item.classList.contains(filterType)) {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+                    });
+                });
+            }
+            
+            // Update activity tab when loaded
+            document.querySelector('.vault-tab[data-tab="activity"]').addEventListener('click', updateActivityTab);
+            
+            // Add file operations to activity log
+            const originalViewFile = viewFile;
+            viewFile = function(file) {
+                addActivityLog({
+                    type: 'view',
+                    date: new Date().toISOString(),
+                    details: `Viewed file: ${file.name}`
+                });
+                originalViewFile(file);
+            };
+            
+            const originalDownloadFile = downloadFile;
+            downloadFile = function(file) {
+                addActivityLog({
+                    type: 'download',
+                    date: new Date().toISOString(),
+                    details: `Downloaded file: ${file.name}`
+                });
+                originalDownloadFile(file);
+            };
+            
+            // Log uploads
+            const originalHandleReportFiles = handleReportFiles;
+            handleReportFiles = function(files) {
+                for (let i = 0; i < files.length; i++) {
+                    addActivityLog({
+                        type: 'upload',
+                        date: new Date().toISOString(),
+                        details: `Uploaded report: ${files[i].name}`
+                    });
+                }
+                originalHandleReportFiles(files);
+            };
+            
+            const originalHandleImageFiles = handleImageFiles;
+            handleImageFiles = function(files) {
+                for (let i = 0; i < files.length; i++) {
+                    addActivityLog({
+                        type: 'upload',
+                        date: new Date().toISOString(),
+                        details: `Uploaded image: ${files[i].name}`
+                    });
+                }
+                originalHandleImageFiles(files);
+            };
+            
+            // Initialize the report vault dropdowns
+            setupDropdown('reportFilterBtn', 'reportFilterMenu');
+            setupDropdown('reportSortBtn', 'reportSortMenu');
+            
+            // Update tag filters on page load
+            updateTagFilters();
+            
+            // Add action button styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .action-btn {
+                    background-color: #f5f5f5;
+                    border: none;
+                    padding: 8px 15px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: all 0.2s ease;
+                }
+                
+                .action-btn:hover {
+                    background-color: #e0e0e0;
+                }
+                
+                .activity-filter {
+                    background-color: #f5f5f5;
+                    border: none;
+                    padding: 8px 15px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: all 0.2s ease;
+                }
+                
+                .activity-filter:hover {
+                    background-color: #e0e0e0;
+                }
+                
+                .activity-filter.active {
+                    background-color: #f10d0d;
+                    color: white;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html> 

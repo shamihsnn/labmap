@@ -873,7 +873,7 @@ async function searchLabs() {
         addToRecentSearches(searchInput);
     } catch (error) {
         console.error('Search error:', error);
-        showAlert('press OK ad we"ll take you there');
+        showAlert('see the blue marker on the map');
     }
 }
 

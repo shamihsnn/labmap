@@ -274,43 +274,32 @@ app.get('/api/semantic-scholar', async (req, res) => {
                 
                 const text = await arXivResponse.text();
                 
-                // Parse the XML response manually
+                // Extract entries and parse them manually
                 const entries = [];
+                const entryMatches = text.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
                 
-                // Split by <entry> tags to get individual papers
-                const entryMatches = text.match(/<entry[\s\S]*?<\/entry>/g) || [];
-                
-                // Process each entry
                 for (const entryXml of entryMatches) {
-                    // Extract title
-                    const titleMatch = entryXml.match(/<title[^>]*>([\s\S]*?)<\/title>/);
-                    const title = titleMatch ? titleMatch[1].trim().replace(/\s+/g, ' ') : 'Unknown Title';
-                    
-                    // Extract publication date and year
-                    const publishedMatch = entryXml.match(/<published>([\s\S]*?)<\/published>/);
-                    const published = publishedMatch ? publishedMatch[1].trim() : '';
+                    // Extract data using regex
+                    const title = (entryXml.match(/<title[^>]*>([\s\S]*?)<\/title>/) || [])[1]?.trim().replace(/\s+/g, ' ') || 'Unknown Title';
+                    const published = (entryXml.match(/<published>([\s\S]*?)<\/published>/) || [])[1]?.trim() || '';
                     const year = published.substring(0, 4) || 'Unknown Year';
+                    const summary = (entryXml.match(/<summary[^>]*>([\s\S]*?)<\/summary>/) || [])[1]?.trim().replace(/\s+/g, ' ') || '';
+                    const url = (entryXml.match(/<id>([\s\S]*?)<\/id>/) || [])[1]?.trim() || '';
                     
-                    // Extract summary/abstract
-                    const summaryMatch = entryXml.match(/<summary[^>]*>([\s\S]*?)<\/summary>/);
-                    const summary = summaryMatch ? summaryMatch[1].trim().replace(/\s+/g, ' ') : '';
-                    
-                    // Extract URL/ID
-                    const urlMatch = entryXml.match(/<id>([\s\S]*?)<\/id>/);
-                    const url = urlMatch ? urlMatch[1].trim() : '';
-                    
-                    // Extract authors - this is the critical part for fixing the bug
+                    // Manual author extraction with fixed regex pattern
                     const authors = [];
-                    const authorBlocks = entryXml.match(/<author>[\s\S]*?<\/author>/g) || [];
+                    // First try with name tag
+                    let authorMatches = entryXml.match(/<author><name>([\s\S]*?)<\/name><\/author>/g);
                     
-                    for (const authorBlock of authorBlocks) {
-                        const nameMatch = authorBlock.match(/<name>([\s\S]*?)<\/name>/);
-                        if (nameMatch && nameMatch[1]) {
-                            authors.push({ name: nameMatch[1].trim() });
-                        }
+                    if (authorMatches && authorMatches.length > 0) {
+                        authorMatches.forEach(match => {
+                            const authorName = match.match(/<name>([\s\S]*?)<\/name>/);
+                            if (authorName && authorName[1]) {
+                                authors.push({ name: authorName[1].trim() });
+                            }
+                        });
                     }
                     
-                    // Add this paper to our entries list
                     entries.push({
                         title,
                         authors: authors.length > 0 ? authors : [{ name: 'Unknown Author' }],
@@ -387,10 +376,6 @@ app.get('/chatbot', (req, res) => {
 
 app.get('/symptoms', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/symptoms.html'));
-});
-
-app.get('/report-vault', (req, res) => {
-    res.sendFile(path.join(__dirname, '../views/report-vault.html'));
 });
 
 const PORT = 3000;
