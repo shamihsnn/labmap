@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Semantic Scholar Search - MediMap</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:;">
+    <style>
+        .semantic-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        
+        .semantic-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .semantic-header h1 {
+            color: #333;
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        
+        .semantic-header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .search-box-main {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-box-main input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            outline: none;
+            padding: 10px;
+        }
+        
+        .search-box-main button {
+            background-color: #f10d0d;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .search-box-main button:hover {
+            background-color: #d10a0a;
+            transform: translateY(-2px);
+        }
+        
+        .search-box-main button:active {
+            transform: translateY(0);
+        }
+        
+        .search-box-main i {
+            color: #666;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+        
+        .results-container {
+            padding: 20px;
+        }
+        
+        .loading-results {
+            text-align: center;
+            padding: 40px 0;
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .error-message, .no-results {
+            color: #f10d0d;
+            text-align: center;
+            padding: 30px 0;
+            font-size: 18px;
+            background-color: #fff3f3;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .article-item {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 5px;
+            border-left: 5px solid #f10d0d;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .article-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .article-item h2 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 22px;
+        }
+        
+        .article-authors {
+            color: #555;
+            font-size: 15px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .article-venue {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
+        .article-abstract {
+            color: #444;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            border-left: 3px solid #eee;
+            padding-left: 15px;
+        }
+        
+        .article-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background-color: #f10d0d;
+            padding: 10px 20px;
+            border-radius: 25px;
+        }
+        
+        .article-link:hover {
+            background-color: #d10a0a;
+            transform: scale(1.05);
+        }
+        
+        .article-link i {
+            margin-left: 8px;
+            font-size: 14px;
+        }
+        
+        .back-to-home {
+            display: inline-flex;
+            align-items: center;
+            color: #333;
+            text-decoration: none;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+        
+        .back-to-home:hover {
+            color: #f10d0d;
+        }
+        
+        .back-to-home i {
+            margin-right: 8px;
+        }
+        
+        /* Override sidebar styles for right side */
+        .sidebar {
+            right: -320px;
+            left: auto;
+        }
+        
+        .sidebar.active {
+            right: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .semantic-container {
+                padding: 15px;
+                margin: 15px auto;
+            }
+            
+            .semantic-header h1 {
+                font-size: 24px;
+            }
+            
+            .search-box-main {
+                flex-direction: column;
+                padding: 12px;
+            }
+            
+            .search-box-main input {
+                width: 100%;
+                margin-bottom: 10px;
+                font-size: 16px;
+            }
+            
+            .search-box-main button {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            .article-item {
+                padding: 15px;
+            }
+            
+            .article-item h2 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hamburger Menu Button (on right side) -->
+    <div class="hamburger-menu right">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MediMap Menu</h2>
+            <button class="close-sidebar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-menu">
+                <ul>
+                    <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for sidebar -->
+    <div class="sidebar-overlay"></div>
+
+    <div class="semantic-container">
+        <a href="/" class="back-to-home"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        
+        <div class="semantic-header">
+            <h1>Semantic Scholar Search</h1>
+            <p>Search for academic articles in medicine, health sciences, and related fields</p>
+        </div>
+        
+        <div class="search-box-main">
+            <i class="fas fa-search"></i>
+            <input type="text" id="semantic-search" placeholder="Search for articles, papers, or research topics...">
+            <button onclick="searchSemanticScholar()">Search</button>
+        </div>
+        
+        <div id="semantic-results" class="results-container"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hamburger menu functionality
+            const hamburgerMenu = document.querySelector('.hamburger-menu');
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarOverlay = document.querySelector('.sidebar-overlay');
+            const closeSidebar = document.querySelector('.close-sidebar');
+
+            hamburgerMenu.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                sidebarOverlay.classList.add('active');
+            });
+
+            function closeSidebarFunc() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            }
+
+            closeSidebar.addEventListener('click', closeSidebarFunc);
+            sidebarOverlay.addEventListener('click', closeSidebarFunc);
+            
+            // Handle Enter key in search box
+            const searchInput = document.getElementById('semantic-search');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        searchSemanticScholar();
+                    }
+                });
+            }
+        });
+
+        // Semantic Scholar Search
+        function searchSemanticScholar() {
+            const query = document.getElementById('semantic-search').value.trim();
+            if (!query) return;
+
+            const resultsContainer = document.getElementById('semantic-results');
+            resultsContainer.innerHTML = '<div class="loading-results">Searching for articles... <i class="fas fa-spinner fa-spin"></i></div>';
+
+            fetch(`/api/semantic-scholar?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        resultsContainer.innerHTML = `<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${data.error}</div>`;
+                        return;
+                    }
+
+                    if (!data.papers || data.papers.length === 0) {
+                        resultsContainer.innerHTML = '<div class="no-results"><i class="fas fa-search"></i> No articles found. Try different keywords.</div>';
+                        return;
+                    }
+
+                    let resultsHtml = '<div class="results-list">';
+                    data.papers.forEach(paper => {
+                        resultsHtml += `
+                            <div class="article-item">
+                                <h2>${paper.title}</h2>
+                                <p class="article-authors">${paper.authors ? paper.authors.map(a => a.name).join(', ') : 'Unknown authors'}</p>
+                                <p class="article-venue">${paper.venue || 'Unknown venue'} (${paper.year || 'Unknown year'})</p>
+                                ${paper.abstract ? `<p class="article-abstract">${paper.abstract}</p>` : ''}
+                                <a href="${paper.url}" target="_blank" class="article-link">Read Full Article <i class="fas fa-external-link-alt"></i></a>
+                            </div>
+                        `;
+                    });
+                    resultsHtml += '</div>';
+                    resultsContainer.innerHTML = resultsHtml;
+                })
+                .catch(error => {
+                    console.error('Error searching Semantic Scholar:', error);
+                    resultsContainer.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i> Error searching for articles. Please try again later.</div>';
+                });
+        }
+    </script>
+</body>
+</html> 

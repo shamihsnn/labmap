@@ -13,8 +13,43 @@
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        /* Ensure sidebar is on the right for this page */
+        .sidebar {
+            right: -320px;
+            left: auto;
+        }
+        
+        .sidebar.active {
+            right: 0;
+        }
+    </style>
 </head>
 <body>
+    <!-- Hamburger Menu Button (moved to right side) -->
+    <div class="hamburger-menu right">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MediMap Menu</h2>
+            <button class="close-sidebar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-menu">
+                <ul>
+                    <li><a href="/semantic-scholar"><i class="fas fa-search"></i> Search Articles</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for sidebar -->
+    <div class="sidebar-overlay"></div>
+
     <div class="search-container">
         
 <div class="search-box">
@@ -73,6 +108,25 @@
 <!-- Add this script at the end of the body -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Hamburger menu functionality
+        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.querySelector('.sidebar-overlay');
+        const closeSidebar = document.querySelector('.close-sidebar');
+
+        hamburgerMenu.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+        });
+
+        function closeSidebarFunc() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        }
+
+        closeSidebar.addEventListener('click', closeSidebarFunc);
+        sidebarOverlay.addEventListener('click', closeSidebarFunc);
+
         const appointmentNavBtn = document.getElementById('appointment-nav-btn');
         if (appointmentNavBtn) {
             appointmentNavBtn.addEventListener('click', () => {

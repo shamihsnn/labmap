@@ -12,6 +12,304 @@ body {
     overflow-x: hidden;
 }
 
+/* Hamburger Menu and Sidebar Styles */
+.hamburger-menu {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 990;
+    transition: all 0.3s ease;
+}
+
+/* Right-side hamburger menu */
+.hamburger-menu.right {
+    left: auto;
+    right: 15px;
+}
+
+.hamburger-menu:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+.hamburger-menu i {
+    color: #f10d0d;
+    font-size: 20px;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 320px;
+    height: 100vh;
+    background-color: #fff;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+}
+
+.sidebar.active {
+    right: 0;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.sidebar-header h2 {
+    color: #f10d0d;
+    font-size: 22px;
+    margin: 0;
+}
+
+.close-sidebar {
+    background: none;
+    border: none;
+    color: #333;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-sidebar:hover {
+    color: #f10d0d;
+}
+
+.sidebar-content {
+    padding: 20px;
+}
+
+.sidebar-menu ul {
+    list-style-type: none;
+    margin-top: 10px;
+}
+
+.sidebar-menu li {
+    margin-bottom: 15px;
+}
+
+.sidebar-menu a {
+    color: #333;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    transition: color 0.3s ease;
+    padding: 12px 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.sidebar-menu a:hover {
+    color: #f10d0d;
+    background-color: #f0f0f0;
+}
+
+.sidebar-menu i {
+    margin-right: 15px;
+    width: 20px;
+    text-align: center;
+    color: #f10d0d;
+}
+
+/* Semantic Scholar Search Styles */
+.semantic-scholar-search {
+    margin-bottom: 30px;
+}
+
+.semantic-scholar-search h3 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.search-box-semantic {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+
+.search-box-semantic input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    outline: none;
+    padding-right: 10px;
+}
+
+.search-box-semantic button {
+    background-color: #f10d0d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.search-box-semantic button:hover {
+    background-color: #d10a0a;
+}
+
+.semantic-results {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.loading-results {
+    text-align: center;
+    padding: 20px 0;
+    color: #666;
+}
+
+.error-message, .no-results {
+    color: #f10d0d;
+    text-align: center;
+    padding: 15px 0;
+}
+
+.results-list {
+    margin-top: 10px;
+}
+
+.article-item {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 3px solid #f10d0d;
+}
+
+.article-item h4 {
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.article-authors {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.article-venue {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+.article-abstract {
+    color: #444;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.article-link {
+    display: inline-block;
+    color: #f10d0d;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.article-link:hover {
+    color: #a70a0a;
+}
+
+.article-link i {
+    margin-left: 5px;
+    font-size: 12px;
+}
+
+/* Responsive styles for the sidebar */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 280px;
+    }
+    
+    .sidebar-header h2 {
+        font-size: 20px;
+    }
+    
+    .sidebar-menu a {
+        font-size: 15px;
+    }
+    
+    .article-item h4 {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 250px;
+    }
+    
+    .sidebar-header h2 {
+        font-size: 18px;
+    }
+    
+    .sidebar-menu a {
+        font-size: 14px;
+    }
+    
+    .search-box-semantic {
+        flex-direction: column;
+        padding: 8px;
+    }
+    
+    .search-box-semantic input {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    .search-box-semantic button {
+        width: 100%;
+    }
+}
+
 /* camera */
 /* Add these styles to styles.css */
 .screenshot-loading {

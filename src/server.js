@@ -191,9 +191,36 @@ app.get('/api/ratings/:labName', (req, res) => {
     }
 });
 
+// Semantic Scholar API endpoint
+app.get('/api/semantic-scholar', async (req, res) => {
+    const { query } = req.query;
+    
+    if (!query) {
+        return res.status(400).json({ error: 'Query parameter is required' });
+    }
+    
+    try {
+        const response = await fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=10&fields=title,authors,year,venue,abstract,url`);
+        
+        if (!response.ok) {
+            throw new Error(`Semantic Scholar API returned ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        res.json({ papers: data.data });
+    } catch (error) {
+        console.error('Semantic Scholar API Error:', error);
+        res.status(500).json({ error: 'Failed to fetch articles from Semantic Scholar' });
+    }
+});
+
 // Page Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/index.html'));
+});
+
+app.get('/semantic-scholar', (req, res) => {
+    res.sendFile(path.join(__dirname, '../views/semantic-scholar.html'));
 });
 
 app.get('/video', (req, res) => {
