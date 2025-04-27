@@ -82,6 +82,54 @@
                 }
             });
         }
+
+        // Add global event listener for rating submissions
+        document.addEventListener('click', function(event) {
+            // Skip if event already has a custom property indicating it was handled
+            if (event.target && event.target.classList.contains('review-submit') && !event._reviewHandled) {
+                event.preventDefault();
+                
+                // Mark this event as handled to prevent duplicate processing
+                event._reviewHandled = true;
+                
+                const labName = event.target.getAttribute('data-lab-name');
+                if (labName) {
+                    // Find the closest popup container
+                    const popup = event.target.closest('.lab-popup');
+                    if (popup) {
+                        // Get the rating and review text elements
+                        const ratingSelect = popup.querySelector('.rating-input');
+                        const reviewText = popup.querySelector('.review-input');
+                        
+                        if (!ratingSelect || ratingSelect.value === '') {
+                            showAlert('Please select a rating', 'error');
+                            return;
+                        }
+                        
+                        const rating = parseInt(ratingSelect.value);
+                        const review = reviewText ? reviewText.value.trim() : '';
+                        
+                        // Call addRating function
+                        addRating(labName, rating, review);
+                        
+                        // Show success alert
+                        showAlert('Thank you for your review!', 'success');
+                        
+                        // Switch to reviews tab
+                        const readTabBtn = popup.querySelector('.simple-tab-btn[data-tab^="read-tab"]');
+                        if (readTabBtn) {
+                            readTabBtn.click();
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Initialize ratings when the page loads
+        if (typeof initializeRatings === 'function') {
+            console.log('Initializing ratings system');
+            initializeRatings();
+        }
     });
 </script>
 </html>

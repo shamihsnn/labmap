@@ -8,36 +8,79 @@ const ratingsDB = {
 function initializeRatings() {
     const savedRatings = localStorage.getItem('labRatings');
     const savedReviews = localStorage.getItem('labReviews');
-    if (savedRatings) ratingsDB.ratings = JSON.parse(savedRatings);
-    if (savedReviews) ratingsDB.reviews = JSON.parse(savedReviews);
+    
+    console.log('Loading ratings from localStorage');
+    
+    if (savedRatings) {
+        try {
+            ratingsDB.ratings = JSON.parse(savedRatings);
+            console.log('Loaded ratings:', ratingsDB.ratings);
+        } catch (e) {
+            console.error('Error parsing ratings:', e);
+            ratingsDB.ratings = {};
+        }
+    }
+    
+    if (savedReviews) {
+        try {
+            ratingsDB.reviews = JSON.parse(savedReviews);
+            console.log('Loaded reviews:', ratingsDB.reviews);
+        } catch (e) {
+            console.error('Error parsing reviews:', e);
+            ratingsDB.reviews = {};
+        }
+    }
 }
 
 // Save ratings to localStorage
 function saveRatings() {
-    localStorage.setItem('labRatings', JSON.stringify(ratingsDB.ratings));
-    localStorage.setItem('labReviews', JSON.stringify(ratingsDB.reviews));
+    try {
+        localStorage.setItem('labRatings', JSON.stringify(ratingsDB.ratings));
+        localStorage.setItem('labReviews', JSON.stringify(ratingsDB.reviews));
+        console.log('Saved ratings to localStorage');
+    } catch (e) {
+        console.error('Error saving ratings:', e);
+    }
 }
 
 // Add or update a rating
 function addRating(labName, rating, review = '') {
+    console.log('Adding rating for:', labName, 'rating:', rating, 'review:', review);
+    
     if (!ratingsDB.ratings[labName]) {
         ratingsDB.ratings[labName] = [];
     }
     ratingsDB.ratings[labName].push(rating);
     
-    if (review) {
-        if (!ratingsDB.reviews[labName]) {
-            ratingsDB.reviews[labName] = [];
-        }
-        ratingsDB.reviews[labName].push({
-            rating,
-            review,
-            date: new Date().toISOString()
-        });
+    // Always create a review entry even if review is empty
+    if (!ratingsDB.reviews[labName]) {
+        ratingsDB.reviews[labName] = [];
     }
     
+    // Make sure review is a string and handle properly
+    const reviewText = review ? String(review).trim() : '';
+    console.log('Review text to be stored:', reviewText);
+    
+    // Create the review object with the review text
+    const reviewObj = {
+        rating,
+        review: reviewText,
+        date: new Date().toISOString()
+    };
+    
+    // Add the review to the array
+    ratingsDB.reviews[labName].push(reviewObj);
+    
+    console.log('Updated ratings:', ratingsDB.ratings[labName]);
+    console.log('Updated reviews:', ratingsDB.reviews[labName]);
+    console.log('Latest review added:', reviewObj);
+    
     saveRatings();
-    updateLabPopup(labName);
+    
+    // Call updateLabPopup if it exists in the global scope
+    if (typeof updateLabPopup === 'function') {
+        updateLabPopup(labName);
+    }
 }
 
 // Get average rating for a lab
@@ -49,14 +92,53 @@ function getAverageRating(labName) {
 
 // Get all reviews for a lab
 function getLabReviews(labName) {
-    return ratingsDB.reviews[labName] || [];
+    // Make sure we have the latest data from localStorage
+    const savedReviews = localStorage.getItem('labReviews');
+    if (savedReviews) {
+        try {
+            const parsedReviews = JSON.parse(savedReviews);
+            ratingsDB.reviews = parsedReviews;
+        } catch (e) {
+            console.error('Error parsing reviews in getLabReviews:', e);
+        }
+    }
+    
+    // Debug the reviews
+    const reviews = ratingsDB.reviews[labName] || [];
+    console.log('Getting reviews for:', labName, 'Found:', reviews);
+    
+    // Ensure each review has all needed properties
+    return reviews.map(review => {
+        // Make sure the review object has all properties
+        return {
+            rating: review.rating || 0,
+            review: review.review || '',
+            date: review.date || new Date().toISOString()
+        };
+    });
 }
 
 function submitReview(labName) {
-    const ratingSelect = document.getElementById(`rating-${labName}`);
-    const reviewText = document.getElementById(`review-${labName}`);
+    const popup = document.querySelector('.leaflet-popup-content');
+    if (!popup) {
+        alert('Could not find the review form. Please try again.');
+        return;
+    }
     
-    if (!ratingSelect || !ratingSelect.value) {
+    // Use more reliable class selectors to find the elements
+    const ratingSelect = popup.querySelector('select.rating-input');
+    const reviewText = popup.querySelector('textarea.review-input');
+    
+    console.log('Rating submission attempt for:', labName);
+    console.log('Rating select element:', ratingSelect);
+    console.log('Selected value:', ratingSelect ? ratingSelect.value : 'not found');
+    
+    if (!ratingSelect) {
+        alert('Could not find the rating selector. Please try again.');
+        return;
+    }
+    
+    if (ratingSelect.value === '' || ratingSelect.value === null) {
         alert('Please select a rating');
         return;
     }
@@ -66,14 +148,20 @@ function submitReview(labName) {
     
     addRating(labName, rating, review);
     
-    // Find and update the marker popup
-    const marker = state.markers.find(m => m.lab.name === labName);
-    if (marker) {
-        marker.marker.getPopup().setContent(createLabPopupContent(marker.lab));
+    // Use showAlert function if it exists in global scope
+    if (typeof showAlert === 'function') {
+        showAlert('Thank you for your review!', 'success');
+    } else {
+        alert('Thank you for your review!');
     }
     
-    // Show success message
-    alert('Thank you for your review!');
+    // Update the UI if marker exists
+    if (typeof state !== 'undefined' && state.markers) {
+        const marker = state.markers.find(m => m.lab.name === labName);
+        if (marker) {
+            marker.marker.getPopup().setContent(createLabPopupContent(marker.lab));
+        }
+    }
 }
 
 // Update the lab list item with new rating

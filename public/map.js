@@ -357,27 +357,45 @@ function initializeLabMarkers() {
         
         // Add popup
         const popup = L.popup({
-            maxWidth: 300
+            maxWidth: 280,
+            minWidth: 250,
+            maxHeight: 350,
+            autoPan: true,
+            autoClose: true,
+            closeOnClick: false,
+            className: 'lab-popup-container'
         }).setContent(popupContent);
         
         marker.bindPopup(popup);
         
         // Add click handler after popup is opened
-        marker.on('popupopen', () => {
+        marker.on('popupopen', (e) => {
             // Initialize tabs
-            const tabBtns = popupContent.querySelectorAll('.tab-btn');
+            const popupElement = e.popup.getElement();
+            if (!popupElement) return;
+            
+            const popupContent = popupElement.querySelector('.lab-popup');
+            if (!popupContent) return;
+            
+            // Initialize simple tabs
+            const tabBtns = popupContent.querySelectorAll('.simple-tab-btn');
             tabBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const tabId = this.getAttribute('data-tab');
+                    
                     // Remove active class from all buttons and panes
-                    popupContent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    popupContent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    popupContent.querySelectorAll('.simple-tab-btn').forEach(b => b.classList.remove('active'));
+                    popupContent.querySelectorAll('.simple-tab-pane').forEach(p => p.classList.remove('active'));
                     
                     // Add active class to clicked button
                     this.classList.add('active');
                     
                     // Show corresponding tab
-                    const tabId = this.getAttribute('data-tab');
-                    popupContent.querySelector('#' + tabId).classList.add('active');
+                    const tabPane = popupContent.querySelector('#' + tabId);
+                    if (tabPane) {
+                        tabPane.classList.add('active');
+                    }
                 });
             });
             
@@ -385,6 +403,48 @@ function initializeLabMarkers() {
             const bookBtn = popupContent.querySelector('#book-appointment-btn');
             if (bookBtn) {
                 bookBtn.onclick = () => createAppointmentModal(lab);
+            }
+            
+            // Set up the review submit button
+            const submitBtn = popupContent.querySelector('.review-submit');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Mark this event as handled to prevent duplicate processing by global listener
+                    e._reviewHandled = true;
+                    
+                    const labName = this.getAttribute('data-lab-name');
+                    if (!labName) return;
+                    
+                    // Get the rating and review text elements
+                    const ratingSelect = popupContent.querySelector('.rating-input');
+                    const reviewText = popupContent.querySelector('.review-input');
+                    
+                    if (!ratingSelect || ratingSelect.value === '') {
+                        showAlert('Please select a rating', 'error');
+                        return;
+                    }
+                    
+                    // Get the rating and review text
+                    const rating = parseInt(ratingSelect.value);
+                    const review = reviewText ? reviewText.value.trim() : '';
+                    
+                    // Add the rating and update the UI
+                    addRating(labName, rating, review);
+                    
+                    // Show success message
+                    showAlert('Thank you for your review!', 'success');
+                    
+                    // Switch to the reviews tab
+                    const readTabBtn = popupContent.querySelector('.simple-tab-btn[data-tab^="read-tab"]');
+                    if (readTabBtn) {
+                        readTabBtn.click();
+                    }
+                    
+                    // Update the lab finder list if it's visible
+                    updateLabFinderList(labName, getAverageRating(labName));
+                });
             }
         });
         
@@ -594,10 +654,15 @@ function showAlert(message, type = 'success') {
     alertElement.className = `notification ${type}`;
     alertElement.textContent = message;
     
+    // Make the alert more noticeable for errors
+    if (type === 'error') {
+        alertElement.style.zIndex = '10001'; // Ensure it's on top
+    }
+    
     // Add to document
     document.body.appendChild(alertElement);
     
-    // Make visible after a small delay (for animation)
+    // Make visible immediately
     setTimeout(() => {
         alertElement.classList.add('visible');
     }, 10);
@@ -620,6 +685,9 @@ function createLabPopupContent(lab) {
     const reviews = getLabReviews(lab.name) || [];
     const reviewCount = ratingsDB.ratings[lab.name] ? ratingsDB.ratings[lab.name].length : 0;
     
+    // Create a safe ID from the lab name by removing spaces and special characters
+    const safeLabName = lab.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+    
     return `
         <div class="lab-popup">
             <h3 class="lab-name">${lab.name}</h3>
@@ -629,50 +697,48 @@ function createLabPopupContent(lab) {
                 <p><i class="fas fa-map-marker-alt"></i> ${lab.address}</p>
                 <p><i class="fas fa-clock"></i> ${lab.timings}</p>
             </div>
+            
             <div class="popup-buttons">
                 <button class="map-btn" onclick="getDirections(${lab.lat}, ${lab.lng})">Get Directions</button>
                 <button class="map-btn" id="book-appointment-btn">Book Appointment</button>
             </div>
-            <div class="rating-container">
-                <div class="current-rating">
-                    <div class="stars">${createStarRating(avgRating)}</div>
-                    <span>${avgRating.toFixed(1)} / 5</span>
-                    <span class="review-count">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>
+            
+            <div class="rating-summary">
+                <div class="stars">${createStarRating(avgRating)}</div>
+                <div class="rating-text">${avgRating.toFixed(1)} / 5 (${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</div>
+            </div>
+            
+            <div class="simple-tabs">
+                <div class="simple-tab-buttons">
+                    <button class="simple-tab-btn active" data-tab="write-tab-${safeLabName}">Write Review</button>
+                    <button class="simple-tab-btn" data-tab="read-tab-${safeLabName}">Read Reviews</button>
                 </div>
-                <div class="rating-tabs">
-                    <div class="tab-buttons">
-                        <button class="tab-btn active" data-tab="rate-tab">Rate</button>
-                        <button class="tab-btn" data-tab="reviews-tab">Read Reviews</button>
+                
+                <div class="simple-tab-content">
+                    <div id="write-tab-${safeLabName}" class="simple-tab-pane active">
+                        <select class="rating-input" aria-label="Select rating">
+                            <option value="">Select rating</option>
+                            <option value="5">★★★★★</option>
+                            <option value="4">★★★★☆</option>
+                            <option value="3">★★★☆☆</option>
+                            <option value="2">★★☆☆☆</option>
+                            <option value="1">★☆☆☆☆</option>
+                        </select>
+                        <textarea class="review-input" placeholder="Write your review here (optional)"></textarea>
+                        <button class="review-submit" data-lab-name="${lab.name}">Submit</button>
                     </div>
-                    <div class="tab-content">
-                        <div id="rate-tab" class="tab-pane active">
-                            <div class="review-form">
-                                <select id="rating-${lab.name}" class="rating-input">
-                                    <option value="">Select rating</option>
-                                    <option value="5">5 stars - Excellent</option>
-                                    <option value="4">4 stars - Very Good</option>
-                                    <option value="3">3 stars - Good</option>
-                                    <option value="2">2 stars - Fair</option>
-                                    <option value="1">1 star - Poor</option>
-                                </select>
-                                <textarea id="review-${lab.name}" class="review-input" placeholder="Write your review here (optional)"></textarea>
-                                <button class="review-submit" onclick="submitReview('${lab.name}')">Submit Review</button>
-                            </div>
-                        </div>
-                        <div id="reviews-tab" class="tab-pane">
-                            <div class="reviews-list">
-                                ${reviews.length > 0 ? 
-                                    reviews.map(r => `
-                                        <div class="review-item">
-                                            <div class="review-stars">${createStarRating(r.rating)}</div>
-                                            <div class="review-text">${r.review || 'No comment'}</div>
-                                            <small>${formatReviewDate(r.date)}</small>
-                                        </div>
-                                    `).join('') : 
-                                    '<p class="no-reviews">No reviews yet. Be the first to review!</p>'
-                                }
-                            </div>
-                        </div>
+                    
+                    <div id="read-tab-${safeLabName}" class="simple-tab-pane">
+                        ${reviews.length > 0 ? 
+                            reviews.map(review => `
+                                <div class="simple-review">
+                                    <div class="simple-review-stars">${createStarRating(review.rating)}</div>
+                                    <div class="simple-review-text">${review.review ? review.review : 'No comment'}</div>
+                                    <div class="simple-review-date">${formatReviewDate(review.date)}</div>
+                                </div>
+                            `).join('') : 
+                            '<p class="no-reviews">No reviews yet. Be the first to review!</p>'
+                        }
                     </div>
                 </div>
             </div>
@@ -685,18 +751,43 @@ function createStarRating(rating) {
 }
 
 function submitReview(labName) {
-    const ratingSelect = document.getElementById(`rating-${labName}`);
-    const reviewText = document.getElementById(`review-${labName}`);
+    // Use a safe ID for the lab
+    const safeLabName = labName.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
     
-    if (!ratingSelect || !ratingSelect.value) {
+    // Find the popup that's currently open
+    const activePopup = document.querySelector('.leaflet-popup-content');
+    if (!activePopup) {
+        showAlert('Could not find the review form. Please try again.', 'error');
+        return;
+    }
+    
+    console.log('Active popup found:', activePopup);
+    
+    // Look for the select element with the proper ID within the active popup
+    const ratingSelect = activePopup.querySelector('select.rating-input');
+    const reviewText = activePopup.querySelector('textarea.review-input');
+    
+    console.log('Rating elements found:', ratingSelect, reviewText);
+    console.log('Rating value:', ratingSelect ? ratingSelect.value : 'not found');
+    console.log('Review text:', reviewText ? reviewText.value : 'not found');
+    
+    if (!ratingSelect) {
+        showAlert('Could not find the rating selector. Please try again.', 'error');
+        return;
+    }
+    
+    // Check if a rating is selected
+    if (ratingSelect.value === '' || ratingSelect.value === null) {
         showAlert('Please select a rating', 'error');
         return;
     }
     
     const rating = parseInt(ratingSelect.value);
-    const review = reviewText ? reviewText.value : '';
+    const review = reviewText ? reviewText.value.trim() : '';
     
-    // Add the rating and review
+    console.log('Adding rating:', rating, 'review text:', review);
+    
+    // Add the rating to storage
     addRating(labName, rating, review);
     
     // Find and update the marker popup
@@ -705,10 +796,16 @@ function submitReview(labName) {
         marker.marker.getPopup().setContent(createLabPopupContent(marker.lab));
     }
     
-    // Show success message
     showAlert('Thank you for your review!', 'success');
     
-    // Update any lab list items that show this lab
+    // Switch to the reviews tab to show the new review
+    setTimeout(() => {
+        const reviewsTabBtn = activePopup.querySelector('.tab-btn[data-tab^="reviews-tab"]');
+        if (reviewsTabBtn) {
+            reviewsTabBtn.click();
+        }
+    }, 300);
+    
     updateLabFinderList(labName, getAverageRating(labName));
 }
 
@@ -719,6 +816,12 @@ function updateLabPopup(labName) {
     if (marker) {
         // Update popup content
         marker.marker.getPopup().setContent(createLabPopupContent(marker.lab));
+        
+        // Force refresh of popup if it's currently open
+        if (marker.marker.isPopupOpen()) {
+            marker.marker.closePopup();
+            marker.marker.openPopup();
+        }
     }
     
     // Update lab list if it's visible
@@ -1544,6 +1647,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof initializeRatings === 'function') {
         initializeRatings();
     }
+});
+
+// Add this CSS style to make the review text more visible
+document.addEventListener('DOMContentLoaded', function() {
+    // Add custom style for review text
+    const style = document.createElement('style');
+    style.textContent = `
+        .review-text {
+            padding: 5px;
+            margin: 5px 0;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            word-wrap: break-word;
+            font-size: 14px !important;
+            color: #333 !important;
+            min-height: 20px;
+        }
+    `;
+    document.head.appendChild(style);
 });
 
 
