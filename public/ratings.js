@@ -52,8 +52,6 @@ function getLabReviews(labName) {
     return ratingsDB.reviews[labName] || [];
 }
 
-
-
 function submitReview(labName) {
     const ratingSelect = document.getElementById(`rating-${labName}`);
     const reviewText = document.getElementById(`review-${labName}`);
@@ -78,19 +76,48 @@ function submitReview(labName) {
     alert('Thank you for your review!');
 }
 
-
+// Update the lab list item with new rating
 function updateLabFinderList(labName, rating) {
+    const reviewCount = ratingsDB.ratings[labName] ? ratingsDB.ratings[labName].length : 0;
+    
+    // Update any filtered lab list items
     const labListElement = document.getElementById('filtered-lab-list');
     if (labListElement) {
         const labItems = labListElement.querySelectorAll('.lab-item');
         labItems.forEach(item => {
-            if (item.querySelector('h3').textContent === labName) {
+            const itemName = item.querySelector('h3')?.textContent;
+            if (itemName === labName) {
                 const starsElement = item.querySelector('.stars');
-                const ratingText = item.querySelector('p');
-                if (starsElement) starsElement.innerHTML = createStarRating(rating);
-                if (ratingText && ratingText.textContent.includes('Rating:')) {
-                    ratingText.textContent = `Rating: ${rating.toFixed(1)} stars`;
+                if (starsElement) {
+                    starsElement.innerHTML = createStarRating(rating);
                 }
+                
+                const ratingText = item.querySelector('.lab-rating');
+                if (ratingText) {
+                    ratingText.innerHTML = `
+                        ${rating.toFixed(1)} out of 5
+                        <span class="review-count">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>
+                    `;
+                }
+            }
+        });
+    }
+    
+    // Update any standalone lab items in the main list
+    const labListItems = document.querySelectorAll(`.lab-item[data-name="${labName}"]`);
+    if (labListItems.length > 0) {
+        labListItems.forEach(item => {
+            const starsElement = item.querySelector('.stars');
+            if (starsElement) {
+                starsElement.innerHTML = createStarRating(rating);
+            }
+            
+            const ratingText = item.querySelector('.lab-rating');
+            if (ratingText) {
+                ratingText.innerHTML = `
+                    ${rating.toFixed(1)} out of 5
+                    <span class="review-count">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>
+                `;
             }
         });
     }

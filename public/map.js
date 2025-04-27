@@ -355,13 +355,34 @@ function initializeLabMarkers() {
         const popupContent = document.createElement('div');
         popupContent.innerHTML = createLabPopupContent(lab);
         
-        // Add click event listener to the Book Appointment button
-        const popup = L.popup().setContent(popupContent);
+        // Add popup
+        const popup = L.popup({
+            maxWidth: 300
+        }).setContent(popupContent);
+        
         marker.bindPopup(popup);
         
         // Add click handler after popup is opened
         marker.on('popupopen', () => {
-            const bookBtn = popupContent.querySelector('button:last-of-type');
+            // Initialize tabs
+            const tabBtns = popupContent.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons and panes
+                    popupContent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    popupContent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Show corresponding tab
+                    const tabId = this.getAttribute('data-tab');
+                    popupContent.querySelector('#' + tabId).classList.add('active');
+                });
+            });
+            
+            // Enable book appointment button
+            const bookBtn = popupContent.querySelector('#book-appointment-btn');
             if (bookBtn) {
                 bookBtn.onclick = () => createAppointmentModal(lab);
             }
@@ -540,48 +561,65 @@ function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString(undefined, options);
 }
 
+// Format review date to a friendly format
+function formatReviewDate(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        return 'Today';
+    } else if (diffDays === 1) {
+        return 'Yesterday';
+    } else if (diffDays < 7) {
+        return `${diffDays} days ago`;
+    } else if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7);
+        return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+    } else {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return date.toLocaleDateString(undefined, options);
+    }
+}
+
 // Enhanced alert function
 function showAlert(message, type = 'success') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert';
+    // Remove any existing alerts
+    const existingAlerts = document.querySelectorAll('.notification');
+    existingAlerts.forEach(alert => alert.remove());
     
-    if (type === 'success') {
-        const [title, ...details] = message.split('\n\n');
-        alertDiv.innerHTML = `
-            <div class="alert-content">
-                <div class="alert-title">
-                    <i class="fas fa-check-circle"></i>
-                    ${title}
-                </div>
-                <div class="alert-details">
-                    ${details.join('\n').split('\n').map(line => {
-                        const [key, value] = line.split(': ');
-                        return key && value ? `<p><strong>${key}:</strong> ${value}</p>` : '';
-                    }).join('')}
-                </div>
-                <div class="alert-message">
-                    You will receive a confirmation email shortly.
-                </div>
-            </div>
-        `;
-    } else {
-        alertDiv.innerHTML = message;
-    }
-
-    document.body.appendChild(alertDiv);
+    // Create new alert element
+    const alertElement = document.createElement('div');
+    alertElement.className = `notification ${type}`;
+    alertElement.textContent = message;
     
-    // Trigger reflow for animation
-    alertDiv.offsetHeight;
-    alertDiv.classList.add('show');
-
+    // Add to document
+    document.body.appendChild(alertElement);
+    
+    // Make visible after a small delay (for animation)
     setTimeout(() => {
-        alertDiv.classList.remove('show');
-        setTimeout(() => alertDiv.remove(), 300);
+        alertElement.classList.add('visible');
+    }, 10);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        alertElement.classList.remove('visible');
+        
+        // Remove from DOM after animation completes
+        setTimeout(() => {
+            alertElement.remove();
+        }, 300);
     }, 5000);
 }
 
 // 2. Update the createLabPopupContent function to properly stringify the lab object
 function createLabPopupContent(lab) {
+    // Get the average rating for this lab
+    const avgRating = getAverageRating(lab.name) || 0;
+    const reviews = getLabReviews(lab.name) || [];
+    const reviewCount = ratingsDB.ratings[lab.name] ? ratingsDB.ratings[lab.name].length : 0;
+    
     return `
         <div class="lab-popup">
             <h3 class="lab-name">${lab.name}</h3>
@@ -592,12 +630,51 @@ function createLabPopupContent(lab) {
                 <p><i class="fas fa-clock"></i> ${lab.timings}</p>
             </div>
             <div class="popup-buttons">
-                <button class="map-btn">Get Directions</button>
-                <button class="map-btn">Book Appointment</button>
+                <button class="map-btn" onclick="getDirections(${lab.lat}, ${lab.lng})">Get Directions</button>
+                <button class="map-btn" id="book-appointment-btn">Book Appointment</button>
             </div>
-            <div class="rating-row">
-                <div class="stars">${createStarRating(lab.rating || 0)}</div>
-                <button class="review-btn">Submit Review</button>
+            <div class="rating-container">
+                <div class="current-rating">
+                    <div class="stars">${createStarRating(avgRating)}</div>
+                    <span>${avgRating.toFixed(1)} / 5</span>
+                    <span class="review-count">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>
+                </div>
+                <div class="rating-tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="rate-tab">Rate</button>
+                        <button class="tab-btn" data-tab="reviews-tab">Read Reviews</button>
+                    </div>
+                    <div class="tab-content">
+                        <div id="rate-tab" class="tab-pane active">
+                            <div class="review-form">
+                                <select id="rating-${lab.name}" class="rating-input">
+                                    <option value="">Select rating</option>
+                                    <option value="5">5 stars - Excellent</option>
+                                    <option value="4">4 stars - Very Good</option>
+                                    <option value="3">3 stars - Good</option>
+                                    <option value="2">2 stars - Fair</option>
+                                    <option value="1">1 star - Poor</option>
+                                </select>
+                                <textarea id="review-${lab.name}" class="review-input" placeholder="Write your review here (optional)"></textarea>
+                                <button class="review-submit" onclick="submitReview('${lab.name}')">Submit Review</button>
+                            </div>
+                        </div>
+                        <div id="reviews-tab" class="tab-pane">
+                            <div class="reviews-list">
+                                ${reviews.length > 0 ? 
+                                    reviews.map(r => `
+                                        <div class="review-item">
+                                            <div class="review-stars">${createStarRating(r.rating)}</div>
+                                            <div class="review-text">${r.review || 'No comment'}</div>
+                                            <small>${formatReviewDate(r.date)}</small>
+                                        </div>
+                                    `).join('') : 
+                                    '<p class="no-reviews">No reviews yet. Be the first to review!</p>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -608,27 +685,45 @@ function createStarRating(rating) {
 }
 
 function submitReview(labName) {
-    const ratingSelect = document.querySelector('.rating-input');
-    const reviewText = document.querySelector('.review-input');
+    const ratingSelect = document.getElementById(`rating-${labName}`);
+    const reviewText = document.getElementById(`review-${labName}`);
     
-    if (!ratingSelect.value) {
-        alert('Please select a rating');
+    if (!ratingSelect || !ratingSelect.value) {
+        showAlert('Please select a rating', 'error');
         return;
     }
     
-    addRating(labName, parseInt(ratingSelect.value), reviewText.value);
+    const rating = parseInt(ratingSelect.value);
+    const review = reviewText ? reviewText.value : '';
     
+    // Add the rating and review
+    addRating(labName, rating, review);
+    
+    // Find and update the marker popup
+    const marker = state.markers.find(m => m.lab.name === labName);
+    if (marker) {
+        marker.marker.getPopup().setContent(createLabPopupContent(marker.lab));
+    }
+    
+    // Show success message
+    showAlert('Thank you for your review!', 'success');
+    
+    // Update any lab list items that show this lab
+    updateLabFinderList(labName, getAverageRating(labName));
+}
+
+// Function to update lab popup when ratings change
+function updateLabPopup(labName) {
     // Find the marker for this lab
     const marker = state.markers.find(m => m.lab.name === labName);
     if (marker) {
         // Update popup content
         marker.marker.getPopup().setContent(createLabPopupContent(marker.lab));
-        // Reset form
-        ratingSelect.value = '';
-        reviewText.value = '';
     }
+    
+    // Update lab list if it's visible
+    updateLabFinderList(labName, getAverageRating(labName));
 }
-
 
 // Add rating filter to your existing filter system
 function addRatingFilter() {
@@ -943,8 +1038,13 @@ function displayFilteredLabs(filteredLabs) {
     if (!labListElement) return;
 
     labListElement.innerHTML = filteredLabs.length ? 
-        filteredLabs.map(lab => `
-            <div class="lab-item">
+        filteredLabs.map(lab => {
+            // Get the rating - either from the filtered lab object or from the ratings DB
+            const avgRating = lab.rating || getAverageRating(lab.name) || 0;
+            const reviewCount = ratingsDB.ratings[lab.name] ? ratingsDB.ratings[lab.name].length : 0;
+            
+            return `
+            <div class="lab-item" data-name="${lab.name}">
                 <div class="lab-header">
                     <h3>${lab.name}</h3>
                     <span class="distance">${lab.distance.toFixed(1)} km</span>
@@ -955,6 +1055,13 @@ function displayFilteredLabs(filteredLabs) {
                     <p><i class="fas fa-map-marker-alt"></i> ${lab.address}</p>
                     <p><i class="fas fa-clock"></i> ${lab.timings}</p>
                 </div>
+                <div class="rating-summary">
+                    <div class="stars">${createStarRating(avgRating)}</div>
+                    <p class="lab-rating">
+                        ${avgRating.toFixed(1)} out of 5
+                        <span class="review-count">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>
+                    </p>
+                </div>
                 <div class="lab-actions">
                     <button class="map-btn directions-btn" data-lat="${lab.lat}" data-lng="${lab.lng}">
                         Get Directions
@@ -964,7 +1071,7 @@ function displayFilteredLabs(filteredLabs) {
                     </button>
                 </div>
             </div>
-        `).join('') :
+        `}).join('') :
         '<div class="no-results">No labs found matching your criteria</div>';
 
     // Add event listeners after creating the elements
@@ -1167,11 +1274,23 @@ function updateLabList(filteredLabs) {
     const labListElement = document.getElementById('filtered-lab-list');
     if (!labListElement) return;
     
-    labListElement.innerHTML = filteredLabs.map(lab => `
-        <div class="lab-item">
+    labListElement.innerHTML = filteredLabs.map(lab => {
+        // Get the average rating for this lab
+        const avgRating = getAverageRating(lab.name) || 0;
+        const reviewCount = ratingsDB.ratings[lab.name] ? ratingsDB.ratings[lab.name].length : 0;
+        
+        return `
+        <div class="lab-item" data-name="${lab.name}">
             <h3>${lab.name}</h3>
             <p>Distance: ${lab.distance.toFixed(1)} km</p>
             <p>Timings: ${lab.timings}</p>
+            <div class="rating-summary">
+                <div class="stars">${createStarRating(avgRating)}</div>
+                <p class="lab-rating">
+                    ${avgRating.toFixed(1)} out of 5
+                    <span class="review-count">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>
+                </p>
+            </div>
             <div class="lab-actions">
                 <button onclick="showOnMap(${lab.lat}, ${lab.lng})" 
                     class="btn-primary">See on Map</button>
@@ -1179,7 +1298,7 @@ function updateLabList(filteredLabs) {
                     class="btn-secondary">Get Directions</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 
@@ -1419,5 +1538,12 @@ window.updateAppointment = function(index, status) {
         showAlert(`Appointment ${status} successfully!`);
     }
 };
+
+// Initialize ratings when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initializeRatings === 'function') {
+        initializeRatings();
+    }
+});
 
 

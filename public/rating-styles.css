@@ -56,20 +56,59 @@
     border-radius: 4px;
 }
 
-.stars {
-    color: #ffd700;
-    margin: 5px 0;
-}
-
 .lab-item {
     border-bottom: 1px solid #eee;
     padding: 10px;
     margin: 5px 0;
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
 }
+
+.lab-item:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.lab-item h3 {
+    color: #2d3748;
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.lab-item p {
+    margin: 4px 0;
+    color: #4a5568;
+    font-size: 14px;
+}
+
+.lab-item .stars {
+    margin: 8px 0 2px 0;
+}
+
+.lab-item .lab-rating {
+    font-size: 14px;
+    color: #4a5568;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lab-item .rating-summary {
+    margin: 8px 0;
+}
+
+.rating-summary .review-count {
+    font-size: 13px;
+    color: #718096;
+}
+
 .lab-actions {
     display: flex;
     gap: 12px;
-    margin-top: 15px;
+    margin-top: 12px;
+    flex-wrap: wrap;
 }
 
 .btn-primary, .btn-secondary {
@@ -84,7 +123,7 @@
 }
 
 .btn-primary {
-    background: #4F46E5;
+    background: #f10d0d;
     color: white;
 }
 
@@ -117,23 +156,86 @@
     padding: 10px;
     border-radius: 8px;
     margin: 10px 0;
-    max-width: 300px;
+    max-width: 280px;
+    max-height: 320px;
+    overflow: hidden;
+}
+
+/* Current Rating Display */
+.current-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 14px;
+}
+
+.current-rating span {
+    font-weight: bold;
+    color: #4a5568;
+}
+
+.current-rating .review-count {
+    font-weight: normal;
+    color: #718096;
+    font-size: 13px;
+}
+
+/* Tabs system */
+.rating-tabs {
+    position: relative;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+}
+
+.tab-btn {
+    padding: 6px 12px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: #718096;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: #f10d0d;
+}
+
+.tab-btn.active {
+    color: #f10d0d;
+    border-bottom-color: #f10d0d;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
 }
 
 /* Stars Styling */
 .stars {
-    font-size: 18px;
+    font-size: 16px;
     color: #FFD700;
     letter-spacing: 1px;
-    margin: 5px 0;
+    margin: 3px 0;
 }
 
 /* Review Form Styling */
 .review-form {
-    margin: 10px 0;
-    padding: 10px;
-    background: white;
-    border-radius: 6px;
+    margin: 8px 0;
+    padding: 0;
+    background: transparent;
 }
 
 .rating-input {
@@ -153,21 +255,32 @@
     border-radius: 4px;
     min-height: 60px;
     font-size: 13px;
+    resize: vertical;
+    max-height: 100px;
 }
 
 .review-submit {
-    background: #4F46E5;
+    background: #f10d0d;
     color: white;
     padding: 6px 12px;
+    border: none;
     border-radius: 4px;
     font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 5px;
+    float: right;
+}
+
+.review-submit:hover {
+    background: #d10b0b;
 }
 
 /* Reviews List Styling */
 .reviews-list {
-    margin-top: 10px;
     max-height: 200px;
     overflow-y: auto;
+    padding-right: 5px;
 }
 
 .review-item {
@@ -176,12 +289,50 @@
     margin: 5px 0;
     border-radius: 4px;
     font-size: 13px;
+    border: 1px solid #f0f0f0;
+}
+
+.review-item .review-stars {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.review-item .review-text {
+    margin-bottom: 4px;
+    line-height: 1.4;
 }
 
 .review-item small {
     color: #64748b;
     font-size: 11px;
-    margin-top: 4px;
+    display: block;
+    text-align: right;
+}
+
+.no-reviews {
+    color: #718096;
+    font-style: italic;
+    text-align: center;
+    margin: 15px 0;
+}
+
+/* Scrollbar styling */
+.reviews-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.reviews-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.reviews-list::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+.reviews-list::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
 }
 
 /* Mobile Responsiveness */
@@ -193,5 +344,111 @@
     
     .reviews-list {
         max-height: 150px;
+    }
+}
+
+/* Review notification styling */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transform: translateY(-10px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 10000;
+}
+
+.notification.success {
+    background-color: #4CAF50;
+}
+
+.notification.error {
+    background-color: #F44336;
+}
+
+.notification.visible {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Lab Popup Styling */
+.lab-popup {
+    max-width: 280px;
+    padding: 0;
+}
+
+.lab-popup .lab-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.lab-popup .lab-info {
+    margin-bottom: 12px;
+}
+
+.lab-popup .lab-info p {
+    margin: 6px 0;
+    font-size: 13px;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lab-popup .lab-info i {
+    color: #f10d0d;
+    width: 16px;
+    text-align: center;
+}
+
+.popup-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.map-btn {
+    flex: 1;
+    background: #f10d0d;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.map-btn:hover {
+    background: #d10b0b;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .rating-container {
+        max-width: 100%;
+        padding: 8px;
+    }
+    
+    .reviews-list {
+        max-height: 150px;
+    }
+    
+    .lab-popup {
+        max-width: 100%;
+    }
+    
+    .popup-buttons {
+        flex-direction: column;
     }
 }
