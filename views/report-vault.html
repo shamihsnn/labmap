@@ -1610,26 +1610,22 @@
                 // For demo, any password works
                 // In a real app, you would verify with server
                 const protectedTab = document.getElementById('protected');
-                protectedTab.innerHTML = `
-                    <div class="files-grid">
-                        <div class="empty-state">
-                            <i class="fas fa-lock-open"></i>
-                            <h3>Protected Vault Unlocked</h3>
-                            <p>This area is for your most sensitive medical information. No files have been added yet.</p>
-                            <div style="margin-top: 20px;">
-                                <button class="upload-btn" id="protected-upload-btn">Upload Protected File</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
                 
-                // Add functionality to the protected upload button
-                const protectedUploadBtn = document.getElementById('protected-upload-btn');
-                if (protectedUploadBtn) {
-                    protectedUploadBtn.addEventListener('click', () => {
-                        alert('In a real application, this would open a secure file upload dialog.');
-                    });
-                }
+                // Clear current content
+                protectedTab.innerHTML = '';
+                
+                // Add empty state with upload button
+                addEmptyProtectedState();
+                
+                // Log activity
+                addActivityLog({
+                    type: 'unlock',
+                    date: new Date().toISOString(),
+                    details: 'Protected vault unlocked'
+                });
+                
+                // Show success notification
+                showNotification('Protected vault unlocked successfully', 'success');
             });
             
             // Load saved files on page load
@@ -2627,6 +2623,385 @@
                 }
             `;
             document.head.appendChild(style);
+
+            // Replace the simple alert with functional protected upload
+            function showProtectedUploadDialog() {
+                // Create dialog overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'dialog-overlay';
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.right = '0';
+                overlay.style.bottom = '0';
+                overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                overlay.style.zIndex = '1000';
+                overlay.style.display = 'flex';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                
+                // Create dialog content
+                const dialog = document.createElement('div');
+                dialog.className = 'upload-dialog';
+                dialog.style.backgroundColor = 'white';
+                dialog.style.borderRadius = '12px';
+                dialog.style.padding = '20px';
+                
+                // Responsive sizing
+                const screenWidth = window.innerWidth;
+                if (screenWidth <= 480) {
+                    // Mobile
+                    dialog.style.width = '90%';
+                    dialog.style.maxHeight = '80vh';
+                } else if (screenWidth <= 768) {
+                    // Tablet
+                    dialog.style.width = '400px';
+                    dialog.style.maxHeight = '85vh';
+                } else {
+                    // Desktop
+                    dialog.style.width = '450px';
+                    dialog.style.maxHeight = '90vh';
+                }
+                
+                dialog.style.maxWidth = '90%';
+                dialog.style.overflowY = 'auto';
+                dialog.style.boxShadow = '0 5px 30px rgba(0, 0, 0, 0.2)';
+                
+                // Add responsive behavior on resize
+                const handleResize = () => {
+                    const newWidth = window.innerWidth;
+                    if (newWidth <= 480) {
+                        dialog.style.width = '90%';
+                        dialog.style.maxHeight = '80vh';
+                    } else if (newWidth <= 768) {
+                        dialog.style.width = '400px';
+                        dialog.style.maxHeight = '85vh';
+                    } else {
+                        dialog.style.width = '450px';
+                        dialog.style.maxHeight = '90vh';
+                    }
+                };
+                
+                window.addEventListener('resize', handleResize);
+                
+                // Remove event listener when dialog is closed
+                const cleanupEventListener = () => {
+                    window.removeEventListener('resize', handleResize);
+                };
+                
+                // Dialog content
+                dialog.innerHTML = `
+                    <h3 style="margin-top: 0; color: #333; margin-bottom: 15px;">Upload Protected File</h3>
+                    <p style="color: #666; margin-bottom: 15px; font-size: 14px;">Files uploaded here will be encrypted and password protected.</p>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">File Password</label>
+                        <input type="password" id="protectedFilePassword" placeholder="Create a strong password" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                        <div style="margin-top: 4px; font-size: 11px; color: #777;">This password will be required to access this file</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">Confirm Password</label>
+                        <input type="password" id="confirmProtectedPassword" placeholder="Confirm password" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px;">Security Level</label>
+                        <select id="securityLevel" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            <option value="standard">Standard Protection</option>
+                            <option value="enhanced">Enhanced Protection</option>
+                            <option value="maximum">Maximum Security</option>
+                        </select>
+                        <div style="margin-top: 4px; font-size: 11px; color: #777;">Higher security may affect access speed</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <div class="upload-area" style="border: 2px dashed #ddd; padding: 15px; text-align: center; border-radius: 8px;">
+                            <i class="fas fa-lock" style="font-size: 22px; color: #888; margin-bottom: 8px;"></i>
+                            <div style="margin-bottom: 8px; font-weight: 500; font-size: 14px;">Select Files to Protect</div>
+                            <input type="file" id="protectedFileInput" style="display: none;" multiple>
+                            <button id="protectedBrowseBtn" style="background-color: #f10d0d; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">Browse Files</button>
+                            <div id="selectedFilesList" style="margin-top: 10px; text-align: left; max-height: 120px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between;">
+                        <button id="cancelProtectedUpload" style="padding: 8px 15px; background-color: #f0f0f0; color: #555; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px;">Cancel</button>
+                        <button id="confirmProtectedUpload" style="padding: 8px 15px; background-color: #f10d0d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px;">Encrypt & Upload</button>
+                    </div>
+                `;
+                
+                document.body.appendChild(overlay);
+                overlay.appendChild(dialog);
+                
+                // Handle button clicks
+                const protectedBrowseBtn = document.getElementById('protectedBrowseBtn');
+                const protectedFileInput = document.getElementById('protectedFileInput');
+                const selectedFilesList = document.getElementById('selectedFilesList');
+                const cancelBtn = document.getElementById('cancelProtectedUpload');
+                const confirmBtn = document.getElementById('confirmProtectedUpload');
+                
+                protectedBrowseBtn.addEventListener('click', () => {
+                    protectedFileInput.click();
+                });
+                
+                protectedFileInput.addEventListener('change', (e) => {
+                    selectedFilesList.innerHTML = '';
+                    const files = e.target.files;
+                    
+                    if (files.length > 0) {
+                        const filesList = document.createElement('div');
+                        filesList.style.marginTop = '8px';
+                        
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const fileItem = document.createElement('div');
+                            fileItem.style.padding = '4px 0';
+                            fileItem.style.borderBottom = '1px solid #eee';
+                            fileItem.style.fontSize = '13px';
+                            fileItem.innerHTML = `
+                                <div style="display: flex; align-items: center;">
+                                    <i class="fas fa-file" style="margin-right: 6px; color: #555; font-size: 12px;"></i>
+                                    <div style="flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</div>
+                                    <div style="color: #777; font-size: 11px; margin-left: 8px;">${formatFileSize(file.size)}</div>
+                                </div>
+                            `;
+                            filesList.appendChild(fileItem);
+                        }
+                        
+                        selectedFilesList.appendChild(filesList);
+                    }
+                });
+                
+                cancelBtn.addEventListener('click', () => {
+                    document.body.removeChild(overlay);
+                    cleanupEventListener();
+                });
+                
+                confirmBtn.addEventListener('click', () => {
+                    const password = document.getElementById('protectedFilePassword').value;
+                    const confirmPassword = document.getElementById('confirmProtectedPassword').value;
+                    const securityLevel = document.getElementById('securityLevel').value;
+                    const files = protectedFileInput.files;
+                    
+                    if (files.length === 0) {
+                        alert('Please select at least one file to upload.');
+                        return;
+                    }
+                    
+                    if (!password) {
+                        alert('Please create a password for your protected files.');
+                        return;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        alert('Passwords do not match. Please try again.');
+                        return;
+                    }
+                    
+                    // Process files
+                    processProtectedFiles(files, password, securityLevel);
+                    
+                    // Close dialog
+                    document.body.removeChild(overlay);
+                    cleanupEventListener();
+                    
+                    // Show success message
+                    showNotification('Files encrypted and uploaded successfully.', 'success');
+                });
+            }
+            
+            function formatFileSize(size) {
+                if (size < 1024) {
+                    return size + ' B';
+                } else if (size < 1024 * 1024) {
+                    return Math.round(size / 1024) + ' KB';
+                } else {
+                    return Math.round(size / (1024 * 1024)) + ' MB';
+                }
+            }
+            
+            function processProtectedFiles(files, password, securityLevel) {
+                // In a real app, this would handle actual encryption based on the security level
+                const protectedVaultContent = document.getElementById('protected');
+                const emptyState = protectedVaultContent.querySelector('.empty-state');
+                
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                
+                const filesGrid = document.createElement('div');
+                filesGrid.className = 'files-grid';
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    // Create file card for protected file
+                    const card = document.createElement('div');
+                    card.className = 'file-card locked-file';
+                    
+                    let fileIcon = 'fa-file';
+                    if (file.name.endsWith('.pdf')) {
+                        fileIcon = 'fa-file-pdf';
+                    } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                        fileIcon = 'fa-file-word';
+                    } else if (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png')) {
+                        fileIcon = 'fa-file-image';
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="file-preview">
+                            <div class="preview-icon">
+                                <i class="fas ${fileIcon}"></i>
+                            </div>
+                        </div>
+                        <div class="file-info">
+                            <h4>${file.name}</h4>
+                            <div class="file-meta">
+                                <span>${formatFileSize(file.size)}</span>
+                                <span>${new Date().toLocaleDateString()}</span>
+                            </div>
+                            <div class="file-tags">
+                                <span class="file-tag">Protected</span>
+                                <span class="file-tag">${securityLevel}</span>
+                            </div>
+                            <div class="file-actions">
+                                <button class="file-action-btn"><i class="fas fa-eye"></i> View</button>
+                                <button class="file-action-btn"><i class="fas fa-download"></i> Download</button>
+                                <button class="file-action-btn"><i class="fas fa-trash"></i> Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add event handlers
+                    const viewBtn = card.querySelector('.file-action-btn:nth-child(1)');
+                    const downloadBtn = card.querySelector('.file-action-btn:nth-child(2)');
+                    const deleteBtn = card.querySelector('.file-action-btn:nth-child(3)');
+                    
+                    viewBtn.addEventListener('click', () => {
+                        promptForProtectedPassword(password, () => {
+                            if (file.type.startsWith('image/')) {
+                                const url = URL.createObjectURL(file);
+                                window.open(url, '_blank');
+                            } else {
+                                alert('File preview not available. Please download the file.');
+                            }
+                        });
+                    });
+                    
+                    downloadBtn.addEventListener('click', () => {
+                        promptForProtectedPassword(password, () => {
+                            const url = URL.createObjectURL(file);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = file.name;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        });
+                    });
+                    
+                    deleteBtn.addEventListener('click', () => {
+                        promptForProtectedPassword(password, () => {
+                            if (confirm('Are you sure you want to delete this protected file?')) {
+                                card.remove();
+                                // Check if grid is empty
+                                if (filesGrid.childElementCount === 0) {
+                                    addEmptyProtectedState();
+                                }
+                            }
+                        });
+                    });
+                    
+                    filesGrid.appendChild(card);
+                    
+                    // Log to activity
+                    addActivityLog({
+                        type: 'upload',
+                        date: new Date().toISOString(),
+                        details: `Added protected file: ${file.name} (${securityLevel} protection)`
+                    });
+                }
+                
+                protectedVaultContent.prepend(filesGrid);
+            }
+            
+            function promptForProtectedPassword(correctPassword, successCallback) {
+                const enteredPassword = prompt('Enter password to access this protected file:');
+                if (!enteredPassword) {
+                    return;
+                }
+                
+                if (enteredPassword === correctPassword) {
+                    successCallback();
+                } else {
+                    alert('Incorrect password. Access denied.');
+                }
+            }
+            
+            function addEmptyProtectedState() {
+                const protectedContent = document.getElementById('protected');
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <i class="fas fa-lock-open"></i>
+                    <h3>Protected Vault Unlocked</h3>
+                    <p>This area is for your most sensitive medical information. No files have been added yet.</p>
+                    <div style="margin-top: 20px;">
+                        <button class="upload-btn" id="protected-upload-btn">Upload Protected File</button>
+                    </div>
+                `;
+                protectedContent.appendChild(emptyState);
+                
+                // Add functionality to the protected upload button
+                const protectedUploadBtn = document.getElementById('protected-upload-btn');
+                if (protectedUploadBtn) {
+                    protectedUploadBtn.addEventListener('click', showProtectedUploadDialog);
+                }
+            }
+            
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.style.position = 'fixed';
+                notification.style.bottom = '20px';
+                notification.style.right = '20px';
+                notification.style.backgroundColor = type === 'success' ? '#4CAF50' : '#2196F3';
+                notification.style.color = 'white';
+                notification.style.padding = '12px 20px';
+                notification.style.borderRadius = '8px';
+                notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                notification.style.zIndex = '9999';
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateY(20px)';
+                notification.style.transition = 'all 0.3s ease';
+                
+                notification.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}" style="margin-right: 10px;"></i>
+                        <div>${message}</div>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                    notification.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Remove after delay
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translateY(20px)';
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 5000);
+            }
         });
     </script>
 </body>
