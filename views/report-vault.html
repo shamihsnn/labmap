@@ -3004,197 +3004,140 @@
             }
 
             // Initialize IndexedDB for file storage
-            let db = null;
-            const DB_NAME = "medimapVaultDB";
-            const DB_VERSION = 1;
-
+            let db;
+            const dbName = "medimapVaultDB";
+            const dbVersion = 1;
+            
             function initializeDB() {
                 return new Promise((resolve, reject) => {
-                    if (!window.indexedDB) {
-                        console.error("Your browser doesn't support IndexedDB");
-                        reject("IndexedDB not supported");
-                        return;
-                    }
+                    const request = indexedDB.open(dbName, dbVersion);
                     
-                    try {
-                        const request = indexedDB.open(DB_NAME, DB_VERSION);
+                    request.onerror = (event) => {
+                        console.error("IndexedDB error:", event.target.error);
+                        reject("Could not open database");
+                    };
+                    
+                    request.onsuccess = (event) => {
+                        db = event.target.result;
+                        console.log("Database opened successfully");
+                        resolve(db);
+                    };
+                    
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
                         
-                        request.onerror = (event) => {
-                            console.error("IndexedDB error:", event.target.error);
-                            reject("Could not open database");
-                        };
+                        // Create object stores for different file types
+                        if (!db.objectStoreNames.contains("reportFiles")) {
+                            db.createObjectStore("reportFiles", { keyPath: "fileName" });
+                        }
                         
-                        request.onsuccess = (event) => {
-                            db = event.target.result;
-                            console.log("Database opened successfully");
-                            resolve(db);
-                        };
+                        if (!db.objectStoreNames.contains("imageFiles")) {
+                            db.createObjectStore("imageFiles", { keyPath: "fileName" });
+                        }
                         
-                        request.onupgradeneeded = (event) => {
-                            const db = event.target.result;
-                            
-                            // Create object stores for different file types
-                            if (!db.objectStoreNames.contains("reportFiles")) {
-                                db.createObjectStore("reportFiles", { keyPath: "fileName" });
-                            }
-                            
-                            if (!db.objectStoreNames.contains("imageFiles")) {
-                                db.createObjectStore("imageFiles", { keyPath: "fileName" });
-                            }
-                            
-                            if (!db.objectStoreNames.contains("protectedFiles")) {
-                                db.createObjectStore("protectedFiles", { keyPath: "fileName" });
-                            }
-                        };
-                    } catch (e) {
-                        console.error("Error initializing IndexedDB:", e);
-                        reject("Error setting up database");
-                    }
+                        if (!db.objectStoreNames.contains("protectedFiles")) {
+                            db.createObjectStore("protectedFiles", { keyPath: "fileName" });
+                        }
+                    };
                 });
             }
             
             // Store file in IndexedDB
             function storeFileInDB(file, type, metadata = {}) {
                 return new Promise((resolve, reject) => {
-                    if (!db) {
-                        reject("Database not initialized");
-                        return;
-                    }
-                    
-                    try {
-                        const reader = new FileReader();
-                        reader.onload = async (event) => {
-                            const fileData = {
-                                fileName: file.name,
-                                type: file.type,
-                                size: file.size,
-                                lastModified: file.lastModified,
-                                dateAdded: new Date().toISOString(),
-                                content: event.target.result,
-                                ...metadata
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        const fileData = {
+                            fileName: file.name,
+                            type: file.type,
+                            size: file.size,
+                            lastModified: file.lastModified,
+                            dateAdded: new Date().toISOString(),
+                            content: event.target.result,
+                            ...metadata
+                        };
+                        
+                        try {
+                            const storeName = type === 'report' ? 'reportFiles' : 
+                                            type === 'image' ? 'imageFiles' : 'protectedFiles';
+                            
+                            const tx = db.transaction(storeName, 'readwrite');
+                            const store = tx.objectStore(storeName);
+                            await store.put(fileData);
+                            
+                            // Wait for transaction to complete
+                            tx.oncomplete = () => {
+                                resolve(fileData);
                             };
                             
-                            try {
-                                const storeName = type === 'report' ? 'reportFiles' : 
-                                                type === 'image' ? 'imageFiles' : 'protectedFiles';
-                                
-                                const tx = db.transaction(storeName, 'readwrite');
-                                const store = tx.objectStore(storeName);
-                                
-                                const putRequest = store.put(fileData);
-                                
-                                putRequest.onsuccess = () => {
-                                    resolve(fileData);
-                                };
-                                
-                                putRequest.onerror = (event) => {
-                                    console.error("Error storing file:", event.target.error);
-                                    reject("Error storing file: " + event.target.error);
-                                };
-                            } catch (error) {
-                                console.error("Error in transaction:", error);
-                                reject("Error in transaction: " + error);
-                            }
-                        };
-                        
-                        reader.onerror = (event) => {
-                            console.error("Error reading file:", event.target.error);
-                            reject("Error reading file");
-                        };
-                        
-                        reader.readAsArrayBuffer(file);
-                    } catch (e) {
-                        console.error("Unexpected error while storing file:", e);
-                        reject("Unexpected error: " + e);
-                    }
+                            tx.onerror = (event) => {
+                                reject("Error storing file: " + event.target.error);
+                            };
+                        } catch (error) {
+                            reject("Error in transaction: " + error);
+                        }
+                    };
+                    
+                    reader.onerror = () => {
+                        reject("Error reading file");
+                    };
+                    
+                    reader.readAsArrayBuffer(file);
                 });
             }
             
             // Get file from IndexedDB
             function getFileFromDB(fileName, storeName) {
                 return new Promise((resolve, reject) => {
-                    if (!db) {
-                        reject("Database not initialized");
-                        return;
-                    }
+                    const tx = db.transaction(storeName, 'readonly');
+                    const store = tx.objectStore(storeName);
+                    const request = store.get(fileName);
                     
-                    try {
-                        const tx = db.transaction(storeName, 'readonly');
-                        const store = tx.objectStore(storeName);
-                        const request = store.get(fileName);
-                        
-                        request.onsuccess = (event) => {
-                            if (event.target.result) {
-                                resolve(event.target.result);
-                            } else {
-                                reject("File not found");
-                            }
-                        };
-                        
-                        request.onerror = (event) => {
-                            console.error("Error retrieving file:", event.target.error);
-                            reject("Error retrieving file: " + event.target.error);
-                        };
-                    } catch (e) {
-                        console.error("Unexpected error while retrieving file:", e);
-                        reject("Unexpected error: " + e);
-                    }
+                    request.onsuccess = (event) => {
+                        if (event.target.result) {
+                            resolve(event.target.result);
+                        } else {
+                            reject("File not found");
+                        }
+                    };
+                    
+                    request.onerror = (event) => {
+                        reject("Error retrieving file: " + event.target.error);
+                    };
                 });
             }
             
             // Delete file from IndexedDB
             function deleteFileFromDB(fileName, storeName) {
                 return new Promise((resolve, reject) => {
-                    if (!db) {
-                        reject("Database not initialized");
-                        return;
-                    }
+                    const tx = db.transaction(storeName, 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    const request = store.delete(fileName);
                     
-                    try {
-                        const tx = db.transaction(storeName, 'readwrite');
-                        const store = tx.objectStore(storeName);
-                        const request = store.delete(fileName);
-                        
-                        request.onsuccess = () => {
-                            resolve();
-                        };
-                        
-                        request.onerror = (event) => {
-                            console.error("Error deleting file:", event.target.error);
-                            reject("Error deleting file: " + event.target.error);
-                        };
-                    } catch (e) {
-                        console.error("Unexpected error while deleting file:", e);
-                        reject("Unexpected error: " + e);
-                    }
+                    request.onsuccess = () => {
+                        resolve();
+                    };
+                    
+                    request.onerror = (event) => {
+                        reject("Error deleting file: " + event.target.error);
+                    };
                 });
             }
             
             // Get all files from a store
             function getAllFilesFromStore(storeName) {
                 return new Promise((resolve, reject) => {
-                    if (!db) {
-                        reject("Database not initialized");
-                        return;
-                    }
+                    const tx = db.transaction(storeName, 'readonly');
+                    const store = tx.objectStore(storeName);
+                    const request = store.getAll();
                     
-                    try {
-                        const tx = db.transaction(storeName, 'readonly');
-                        const store = tx.objectStore(storeName);
-                        const request = store.getAll();
-                        
-                        request.onsuccess = (event) => {
-                            resolve(event.target.result);
-                        };
-                        
-                        request.onerror = (event) => {
-                            console.error("Error retrieving files:", event.target.error);
-                            reject("Error retrieving files: " + event.target.error);
-                        };
-                    } catch (e) {
-                        console.error("Unexpected error while retrieving files:", e);
-                        reject("Unexpected error: " + e);
-                    }
+                    request.onsuccess = (event) => {
+                        resolve(event.target.result);
+                    };
+                    
+                    request.onerror = (event) => {
+                        reject("Error retrieving files: " + event.target.error);
+                    };
                 });
             }
             
@@ -3666,191 +3609,76 @@
                 try {
                     // Initialize DB first
                     await initializeDB();
-                    console.log("Database initialized successfully");
                     
-                    try {
-                        // Load reports from IndexedDB
-                        const savedReports = await getAllFilesFromStore('reportFiles');
-                        console.log(`Loaded ${savedReports.length} reports from IndexedDB`);
-                        
-                        if (savedReports.length > 0) {
-                            const emptyState = document.querySelector('#reports-grid .empty-state');
-                            if (emptyState) {
-                                emptyState.remove();
-                            }
-                            
-                            savedReports.forEach(fileData => {
-                                try {
-                                    const file = createFileFromStored(fileData);
-                                    const fileCard = createFileCard(file, 'report');
-                                    document.getElementById('reports-grid').appendChild(fileCard);
-                                } catch (error) {
-                                    console.error(`Error processing report file ${fileData.fileName}:`, error);
-                                }
-                            });
+                    // Load reports from IndexedDB
+                    const savedReports = await getAllFilesFromStore('reportFiles');
+                    if (savedReports.length > 0) {
+                        const emptyState = document.querySelector('#reports-grid .empty-state');
+                        if (emptyState) {
+                            emptyState.remove();
                         }
-                    } catch (error) {
-                        console.error("Error loading reports:", error);
-                        // Continue with other file types even if reports fail
+                        
+                        savedReports.forEach(fileData => {
+                            const file = createFileFromStored(fileData);
+                            const fileCard = createFileCard(file, 'report');
+                            document.getElementById('reports-grid').appendChild(fileCard);
+                        });
                     }
                     
-                    try {
-                        // Load images from IndexedDB
-                        const savedImages = await getAllFilesFromStore('imageFiles');
-                        console.log(`Loaded ${savedImages.length} images from IndexedDB`);
-                        
-                        if (savedImages.length > 0) {
-                            const emptyState = document.querySelector('#images-grid .empty-state');
-                            if (emptyState) {
-                                emptyState.remove();
-                            }
-                            
-                            savedImages.forEach(fileData => {
-                                try {
-                                    const file = createFileFromStored(fileData);
-                                    const fileCard = createFileCard(file, 'image');
-                                    document.getElementById('images-grid').appendChild(fileCard);
-                                } catch (error) {
-                                    console.error(`Error processing image file ${fileData.fileName}:`, error);
-                                }
-                            });
+                    // Load images from IndexedDB
+                    const savedImages = await getAllFilesFromStore('imageFiles');
+                    if (savedImages.length > 0) {
+                        const emptyState = document.querySelector('#images-grid .empty-state');
+                        if (emptyState) {
+                            emptyState.remove();
                         }
-                    } catch (error) {
-                        console.error("Error loading images:", error);
-                        // Continue with protected files even if images fail
+                        
+                        savedImages.forEach(fileData => {
+                            const file = createFileFromStored(fileData);
+                            const fileCard = createFileCard(file, 'image');
+                            document.getElementById('images-grid').appendChild(fileCard);
+                        });
                     }
                     
-                    try {
-                        // Check if protected vault was unlocked before refresh
-                        const wasUnlocked = localStorage.getItem('protectedVaultUnlocked') === 'true';
-                        if (wasUnlocked) {
-                            console.log("Protected vault was unlocked, restoring state");
-                            // Automatically unlock the vault
-                            const protectedTab = document.getElementById('protected');
-                            protectedTab.innerHTML = '';
+                    // Check if protected vault was unlocked before refresh
+                    const wasUnlocked = localStorage.getItem('protectedVaultUnlocked') === 'true';
+                    if (wasUnlocked) {
+                        // Automatically unlock the vault
+                        const protectedTab = document.getElementById('protected');
+                        protectedTab.innerHTML = '';
+                        
+                        const protectedFiles = await getAllFilesFromStore('protectedFiles');
+                        if (protectedFiles.length > 0) {
+                            const filesGrid = document.createElement('div');
+                            filesGrid.className = 'files-grid';
                             
-                            const protectedFiles = await getAllFilesFromStore('protectedFiles');
-                            console.log(`Loaded ${protectedFiles.length} protected files from IndexedDB`);
-                            
-                            if (protectedFiles.length > 0) {
-                                const filesGrid = document.createElement('div');
-                                filesGrid.className = 'files-grid';
-                                
-                                for (const fileData of protectedFiles) {
-                                    try {
-                                        const file = createFileFromStored(fileData);
-                                        const card = createProtectedFileCard(
-                                            file, 
-                                            fileData.password, 
-                                            fileData.securityLevel
-                                        );
-                                        filesGrid.appendChild(card);
-                                    } catch (error) {
-                                        console.error(`Error processing protected file ${fileData.fileName}:`, error);
-                                    }
-                                }
-                                
-                                protectedTab.appendChild(filesGrid);
-                            } else {
-                                // No protected files found
-                                addEmptyProtectedState();
+                            for (const fileData of protectedFiles) {
+                                const file = createFileFromStored(fileData);
+                                const card = createProtectedFileCard(
+                                    file, 
+                                    fileData.password, 
+                                    fileData.securityLevel
+                                );
+                                filesGrid.appendChild(card);
                             }
+                            
+                            protectedTab.appendChild(filesGrid);
+                        } else {
+                            // No protected files found
+                            addEmptyProtectedState();
                         }
-                    } catch (error) {
-                        console.error("Error loading protected files:", error);
-                        // Continue with UI updates even if protected files fail
                     }
                     
                     // Update tag filters
-                    try {
-                        updateTagFilters();
-                    } catch (error) {
-                        console.error("Error updating tag filters:", error);
-                    }
+                    updateTagFilters();
                 } catch (error) {
-                    console.error("Error initializing database:", error);
-                    
-                    // Show friendly error message to user
-                    showNotification(
-                        "Unable to access secure storage. Some features may be limited.", 
-                        "error"
-                    );
-                    
-                    // Use LocalStorage as fallback for protected vault state
-                    const wasUnlocked = localStorage.getItem('protectedVaultUnlocked') === 'true';
-                    if (wasUnlocked) {
-                        const protectedTab = document.getElementById('protected');
-                        protectedTab.innerHTML = '';
-                        addEmptyProtectedState();
-                    }
+                    console.error("Error loading saved files:", error);
+                    alert("Error loading saved files: " + error);
                 }
             }
             
-            // Create a notification type for errors
-            function showNotification(message, type = 'info') {
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
-                notification.style.position = 'fixed';
-                notification.style.bottom = '20px';
-                notification.style.right = '20px';
-                
-                // Set color based on type
-                if (type === 'error') {
-                    notification.style.backgroundColor = '#f44336';
-                } else if (type === 'success') {
-                    notification.style.backgroundColor = '#4CAF50';
-                } else {
-                    notification.style.backgroundColor = '#2196F3';
-                }
-                
-                notification.style.color = 'white';
-                notification.style.padding = '12px 20px';
-                notification.style.borderRadius = '8px';
-                notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                notification.style.zIndex = '9999';
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateY(20px)';
-                notification.style.transition = 'all 0.3s ease';
-                
-                const icon = type === 'error' ? 'fa-exclamation-circle' : 
-                            type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
-                
-                notification.innerHTML = `
-                    <div style="display: flex; align-items: center;">
-                        <i class="fas ${icon}" style="margin-right: 10px;"></i>
-                        <div>${message}</div>
-                    </div>
-                `;
-                
-                document.body.appendChild(notification);
-                
-                // Animate in
-                setTimeout(() => {
-                    notification.style.opacity = '1';
-                    notification.style.transform = 'translateY(0)';
-                }, 10);
-                
-                // Remove after delay
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    notification.style.transform = 'translateY(20px)';
-                    
-                    setTimeout(() => {
-                        document.body.removeChild(notification);
-                    }, 300);
-                }, 5000);
-            }
-        });
-
-        // Ensure we call loadSavedFiles when the document is ready
-        document.addEventListener('DOMContentLoaded', function() {
             // Call the loadSavedFiles function when the page loads
-            setTimeout(() => {
-                loadSavedFiles().catch(error => {
-                    console.error("Error in loadSavedFiles:", error);
-                    showNotification("There was a problem loading your saved files", "error");
-                });
-            }, 500); // Small delay to ensure DOM is fully ready
+            loadSavedFiles();
         });
     </script>
 </body>
