@@ -147,8 +147,8 @@
         .category-count { background: #e0e0e0; color: #888; border-radius: 50px; padding: 2px 12px; font-size: 14px; font-weight: bold; margin-left: 8px; }
         .add-new { color: #1976d2; background: #eaf2ff; border: 2px dashed #1976d2; }
         .category-actions { display: flex; gap: 6px; margin-left: 8px; }
-        .category-actions button { background: none; border: none; color: #888; font-size: 15px; cursor: pointer; transition: color 0.18s; }
-        .category-actions button:hover { color: #c00; }
+        .category-actions button { background: none; border: none; color: #1976d2; font-size: 15px; cursor: pointer; transition: color 0.18s; width: 24px; height: 24px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; }
+        .category-actions button:hover { color: #fff; background: #1976d2; }
         .lock-list { margin-top: 18px; }
         .lock-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; background: #fff; border-radius: 7px; padding: 10px 14px; box-shadow: 0 1px 4px #0001; border: 1.5px solid #e0e0e0; }
         .lock-row input[type=password] { border: 1px solid #b0b8c1; border-radius: 5px; padding: 4px 8px; font-size: 15px; }
@@ -261,6 +261,22 @@
         <div id="categoryModalGrid" style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px;"></div>
         <div class="modal-btn-row">
             <button class="cancel" id="categoryModalCancel">Cancel</button>
+        </div>
+    </div>
+</div>
+<!-- Category Upload Modal -->
+<div class="modal-bg" id="categoryUploadModal">
+    <div class="modal">
+        <button class="modal-close" id="catUploadModalClose" title="Close">&times;</button>
+        <h3>Upload Files to <span id="catUploadName"></span></h3>
+        <div class="upload-area" id="catUploadArea" style="margin:15px 0;">
+            <i class="fas fa-file-upload"></i>
+            <div style="margin:10px 0;">Drag files here or click the button below</div>
+            <input type="file" id="catUploadInput" multiple>
+            <button class="upload-btn" id="catUploadBrowseBtn">Browse Files</button>
+        </div>
+        <div class="modal-btn-row">
+            <button class="cancel" id="catUploadCancel">Cancel</button>
         </div>
     </div>
 </div>
@@ -520,24 +536,31 @@ function renderCategoryFiles(catKey) {
 }
 function renderCategoryFileList(files, list) {
     list.innerHTML = '';
-    // File type filter
+    
+    // File type filter and upload button
     const filterBar = document.createElement('div');
     filterBar.style.display = 'flex';
     filterBar.style.gap = '10px';
     filterBar.style.marginBottom = '18px';
+    filterBar.style.alignItems = 'center';
+    
     filterBar.innerHTML = `
         <button class="upload-btn" style="padding:7px 18px;font-size:15px;${categoryFileType==='all'?'background:#1976d2;color:#fff;':''}" onclick="setCategoryFileType('all')">All</button>
         <button class="upload-btn" style="padding:7px 18px;font-size:15px;${categoryFileType==='document'?'background:#1976d2;color:#fff;':''}" onclick="setCategoryFileType('document')">Documents</button>
         <button class="upload-btn" style="padding:7px 18px;font-size:15px;${categoryFileType==='image'?'background:#1976d2;color:#fff;':''}" onclick="setCategoryFileType('image')">Images</button>
+        <div style="flex:1"></div>
+        <button class="upload-btn" style="display:flex;align-items:center;gap:8px;" onclick="showCategoryUploadModal('${currentCategory}', '${getCategoryLabel(currentCategory)}')"><i class="fas fa-upload"></i> Upload to ${getCategoryLabel(currentCategory)}</button>
     `;
     list.appendChild(filterBar);
+    
     if (!files.length) {
         const empty = document.createElement('div');
         empty.className = 'empty-state';
-        empty.innerHTML = '<i class="fas fa-folder-open"></i><br>No files in this category.';
+        empty.innerHTML = '<i class="fas fa-folder-open"></i><br>No files in this category.<br><button class="upload-btn" style="margin-top:15px;" onclick="showCategoryUploadModal(\'' + currentCategory + '\', \'' + getCategoryLabel(currentCategory) + '\')">Upload Files</button>';
         list.appendChild(empty);
         return;
     }
+    
     files.forEach(file => {
         const card = document.createElement('div');
         card.className = 'file-card';
@@ -758,6 +781,9 @@ async function renderCategories() {
                 <div class="category-name">${cat.label}</div>
             </div>
             ${!cat.addNew ? `<span class="category-count">${catCounts[cat.key] || 0}</span>` : ''}
+            ${!cat.addNew ? `<div class="category-actions">
+                <button title="Upload" onclick="event.stopPropagation(); showCategoryUploadModal('${cat.key}', '${cat.label}')"><i class="fas fa-upload"></i></button>
+            </div>` : ''}
         `;
         
         card.onclick = () => {
@@ -1007,6 +1033,77 @@ document.getElementById('categoryModalClose').onclick = function() {
 document.getElementById('categoryModalCancel').onclick = function() {
     pendingFileForCategory = null;
     document.getElementById('categoryModal').classList.remove('active');
+};
+
+// --- CATEGORY UPLOAD MODAL ---
+window.showCategoryUploadModal = function(categoryKey, categoryLabel) {
+    pendingCategory = categoryKey;
+    document.getElementById('catUploadName').textContent = categoryLabel;
+    document.getElementById('categoryUploadModal').classList.add('active');
+    
+    // Set up upload functionality
+    setupCategoryUpload();
+};
+
+function setupCategoryUpload() {
+    const browseBtn = document.getElementById('catUploadBrowseBtn');
+    const fileInput = document.getElementById('catUploadInput');
+    const uploadArea = document.getElementById('catUploadArea');
+    
+    // Clear any previous event listeners
+    const newFileInput = fileInput.cloneNode(true);
+    fileInput.parentNode.replaceChild(newFileInput, fileInput);
+    
+    // Set up new event listeners
+    browseBtn.onclick = () => newFileInput.click();
+    
+    newFileInput.onchange = (e) => {
+        if (e.target.files.length) {
+            pendingFile = Array.from(e.target.files);
+            pendingType = determineFileTypes(pendingFile);
+            document.getElementById('categoryUploadModal').classList.remove('active');
+            showPasswordModal();
+        }
+    };
+    
+    // Drag and drop setup
+    uploadArea.ondragover = e => { e.preventDefault(); uploadArea.style.background='#eaf2ff'; };
+    uploadArea.ondragleave = e => { e.preventDefault(); uploadArea.style.background=''; };
+    uploadArea.ondrop = e => {
+        e.preventDefault(); uploadArea.style.background='';
+        if (e.dataTransfer.files.length) {
+            pendingFile = Array.from(e.dataTransfer.files);
+            pendingType = determineFileTypes(pendingFile);
+            document.getElementById('categoryUploadModal').classList.remove('active');
+            showPasswordModal();
+        }
+    };
+}
+
+function determineFileTypes(files) {
+    // Determine if all files are images or documents or mixed
+    const isAllImages = files.every(file => file.type.startsWith('image/'));
+    const isAllDocs = files.every(file => 
+        file.type === 'application/pdf' || 
+        file.type.includes('word') || 
+        file.type.includes('doc') ||
+        file.name.endsWith('.pdf') || 
+        file.name.endsWith('.doc') || 
+        file.name.endsWith('.docx')
+    );
+    
+    return isAllImages ? 'image' : isAllDocs ? 'document' : 'mixed';
+}
+
+// Close category upload modal
+document.getElementById('catUploadModalClose').onclick = function() {
+    pendingCategory = null;
+    document.getElementById('categoryUploadModal').classList.remove('active');
+};
+
+document.getElementById('catUploadCancel').onclick = function() {
+    pendingCategory = null;
+    document.getElementById('categoryUploadModal').classList.remove('active');
 };
 
 // -- APP INITIALIZATION --
