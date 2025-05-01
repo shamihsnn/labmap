@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Semantic Scholar Search - MediMap</title>
+    <title>Disease Information Search - MediMap</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -113,6 +113,17 @@
             margin-right: 8px;
             font-size: 18px;
         }
+
+        .reliability-badge {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
@@ -135,6 +146,10 @@
             transition: transform 0.3s ease;
         }
         
+        .article-item.simplified {
+            border-left: 5px solid #2196F3;
+        }
+        
         .article-item:hover {
             transform: translateY(-5px);
         }
@@ -143,6 +158,8 @@
             color: #333;
             margin-bottom: 12px;
             font-size: 22px;
+            display: flex;
+            align-items: center;
         }
         
         .article-authors {
@@ -206,6 +223,35 @@
         
         .back-to-home i {
             margin-right: 8px;
+        }
+
+        .info-panel {
+            background-color: #e8f4f8;
+            border-left: 5px solid #2196F3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .info-panel h3 {
+            color: #0d47a1;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .info-panel p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .info-panel ul {
+            padding-left: 20px;
+        }
+        
+        .info-panel li {
+            margin-bottom: 5px;
         }
         
         /* Override sidebar styles for right side */
@@ -298,6 +344,81 @@
                 font-size: 18px;
             }
         }
+
+        .simplified-toggle {
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .toggle-button {
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            padding: 8px 20px;
+            cursor: pointer;
+            margin: 0 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .toggle-button i {
+            margin-right: 5px;
+        }
+
+        .toggle-button.active {
+            background-color: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+        
+        #pubmed-toggle.active {
+            background-color: #f10d0d;
+            border-color: #f10d0d;
+        }
+        
+        #medlineplus-toggle.active {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        #mayo-toggle.active {
+            background-color: #2196F3;
+            border-color: #2196F3;
+        }
+        
+        #cdc-toggle.active {
+            background-color: #673AB7;
+            border-color: #673AB7;
+        }
+
+        .toggle-button:hover:not(.active) {
+            border-color: #2196F3;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+        }
+
+        .simple-explanation {
+            background-color: #e8f5fe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 3px solid #2196F3;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .simple-explanation h4 {
+            color: #0d47a1;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
@@ -315,7 +436,7 @@
         <div class="sidebar-content">
             <div class="sidebar-menu">
                 <ul>
-                    <li><a href="/semantic-scholar" class="active"><i class="fas fa-search"></i> Search Articles</a></li>
+                    <li><a href="/semantic-scholar" class="active"><i class="fas fa-search"></i> Disease Information</a></li>
                     <li><a href="/report-vault"><i class="fas fa-file-medical-alt"></i> Report Vault</a></li>
                 </ul>
             </div>
@@ -334,16 +455,59 @@
         <a href="/" class="back-to-home"><i class="fas fa-arrow-left"></i> Back to Home</a>
         
         <div class="semantic-header">
-            <h1>Search for Academic Articles </h1>
-            <p>Search for academic articles in medicine, health sciences, and related fields through all major resources
-        <p></p>pubmed, google scholar, arxiv, etc.</p>
-            </p>
+            <h1>Search for Reliable Disease Information</h1>
+            <p>Get trustworthy information about medical conditions from reputable sources</p>
+        </div>
+
+        <div class="info-panel">
+            <h3>Why Use Our Disease Search?</h3>
+            <p>When researching health conditions, it's crucial to access reliable information. Our search provides:</p>
+            <ul>
+                <li><strong>Medically-verified sources</strong> from PubMed, trusted medical journals, and academic institutions</li>
+                <li><strong>Latest research</strong> on treatments, symptoms, and management strategies</li>
+                <li><strong>Patient-friendly</strong> explanations of complex medical topics</li>
+                <li><strong>Direct links</strong> to original sources for further reading</li>
+            </ul>
+            <p>We filter out unreliable websites to ensure you only receive accurate medical information.</p>
+        </div>
+        
+        <div class="info-panel" style="background-color: #e8fff0; border-left-color: #28a745;">
+            <h3>Our Trusted Sources</h3>
+            <p>We gather information from these reputable sources:</p>
+            <ul>
+                <li><strong>MedlinePlus</strong> - Consumer health information from the U.S. National Library of Medicine</li>
+                <li><strong>Mayo Clinic</strong> - Expert, patient-friendly explanations of health conditions</li>
+                <li><strong>CDC</strong> - Reliable public health information and guidelines</li>
+                <li><strong>NIH</strong> - Latest medical research translated for public understanding</li>
+                <li><strong>Cleveland Clinic</strong> - Comprehensive health condition guides</li>
+                <li><strong>PubMed</strong> - Peer-reviewed academic medical research</li>
+            </ul>
+        </div>
+        
+        <div class="info-panel" style="background-color: #fff3cd; border-left-color: #ffc107;">
+            <h3><i class="fas fa-info-circle"></i> Demo Version Notice</h3>
+            <p>This is a demonstration version that provides simulated health information from trusted sources. While the links direct to the actual health websites, search results are pre-formatted examples for demonstration purposes.</p>
+            <p>For medical concerns, always consult a healthcare professional and visit the official websites directly.</p>
         </div>
         
         <div class="search-box-main">
             <i class="fas fa-search"></i>
-            <input type="text" id="semantic-search" placeholder="Search for articles, papers, or research topics...">
-            <button onclick="searchSemanticScholar()">Search</button>
+            <input type="text" id="semantic-search" placeholder="Search for a disease, condition, or health topic...">
+            <button onclick="searchDisease()">Search</button>
+        </div>
+        
+        <div class="simplified-toggle" style="display: block;">
+            <p><strong>Select Preferred Source Type:</strong></p>
+            <button id="pubmed-toggle" class="toggle-button active" onclick="setSourceFilter('pubmed')"><i class="fas fa-microscope"></i> PubMed/Academic</button>
+            <button id="medlineplus-toggle" class="toggle-button" onclick="setSourceFilter('medlineplus')"><i class="fas fa-user-md"></i> MedlinePlus</button>
+            <button id="mayo-toggle" class="toggle-button" onclick="setSourceFilter('mayo')"><i class="fas fa-hospital"></i> Mayo Clinic</button>
+            <button id="cdc-toggle" class="toggle-button" onclick="setSourceFilter('cdc')"><i class="fas fa-shield-alt"></i> CDC/NIH</button>
+        </div>
+        
+        <div id="results-options" class="simplified-toggle" style="display: none;">
+            <p><strong>Information Type:</strong></p>
+            <button id="professional-toggle" class="toggle-button active" onclick="toggleView('professional')">Medical Articles</button>
+            <button id="simplified-toggle" class="toggle-button" onclick="toggleView('simplified')">Plain Language</button>
         </div>
         
         <div id="semantic-results" class="results-container"></div>
@@ -375,21 +539,75 @@
             if (searchInput) {
                 searchInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
-                        searchSemanticScholar();
+                        searchDisease();
                     }
                 });
             }
         });
 
-        // Semantic Scholar Search
-        function searchSemanticScholar() {
+        // Current view mode
+        let currentView = 'professional';
+        let currentSource = 'pubmed';
+
+        // Set source filter
+        function setSourceFilter(source) {
+            currentSource = source;
+            document.querySelectorAll('.simplified-toggle .toggle-button').forEach(btn => {
+                if (btn.id.includes(source)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // If there's a current search, re-run it with the new source
+            const searchQuery = document.getElementById('semantic-search').value.trim();
+            if (searchQuery) {
+                searchDisease();
+            }
+        }
+
+        // Toggle between professional and simplified views
+        function toggleView(mode) {
+            currentView = mode;
+            const professionalButton = document.getElementById('professional-toggle');
+            const simplifiedButton = document.getElementById('simplified-toggle');
+            
+            if (mode === 'professional') {
+                professionalButton.classList.add('active');
+                simplifiedButton.classList.remove('active');
+                document.querySelectorAll('.article-item').forEach(item => {
+                    item.classList.remove('simplified');
+                    const simpleExplanation = item.querySelector('.simple-explanation');
+                    if (simpleExplanation) {
+                        simpleExplanation.style.display = 'none';
+                    }
+                });
+            } else {
+                professionalButton.classList.remove('active');
+                simplifiedButton.classList.add('active');
+                document.querySelectorAll('.article-item').forEach(item => {
+                    item.classList.add('simplified');
+                    const simpleExplanation = item.querySelector('.simple-explanation');
+                    if (simpleExplanation) {
+                        simpleExplanation.style.display = 'block';
+                    }
+                });
+            }
+        }
+
+        // Disease Search Function
+        function searchDisease() {
             const query = document.getElementById('semantic-search').value.trim();
             if (!query) return;
 
             const resultsContainer = document.getElementById('semantic-results');
-            resultsContainer.innerHTML = '<div class="loading-results">Searching for articles... <i class="fas fa-spinner fa-spin"></i></div>';
+            resultsContainer.innerHTML = '<div class="loading-results">Searching for reliable information... <i class="fas fa-spinner fa-spin"></i></div>';
+            
+            // Hide options until results load
+            document.getElementById('results-options').style.display = 'none';
 
-            fetch(`/api/semantic-scholar?query=${encodeURIComponent(query)}`)
+            fetch(`/api/semantic-scholar?query=${encodeURIComponent(query)}&filter=disease&simplified=true&source=${currentSource}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -398,28 +616,53 @@
                     }
 
                     if (!data.papers || data.papers.length === 0) {
-                        resultsContainer.innerHTML = '<div class="no-results"><i class="fas fa-search"></i> No articles found. Try different keywords.</div>';
+                        resultsContainer.innerHTML = '<div class="no-results"><i class="fas fa-search"></i> No reliable information found on this topic. Try different keywords or a more common medical term.</div>';
                         return;
                     }
 
+                    // Show view options
+                    document.getElementById('results-options').style.display = 'block';
+
                     let resultsHtml = '';
                     
-                    // Display notification about source used if it's not Semantic Scholar
-                    if (data.source && data.source !== 'Semantic Scholar') {
-                        resultsHtml += `<div class="source-notification">
-                            <i class="fas fa-info-circle"></i> Semantic Scholar API unavailable. Results provided by ${data.source} instead.
-                        </div>`;
-                    }
+                    // Display notification about source used
+                    resultsHtml += `<div class="source-notification">
+                        <i class="fas fa-info-circle"></i> Showing top reliable results about "${query}" from ${data.source || 'medical databases'}.
+                    </div>`;
                     
                     resultsHtml += '<div class="results-list">';
                     data.papers.forEach(paper => {
+                        // Add reliability badge based on source
+                        let reliabilityBadge = '';
+                        if (paper.source === 'PubMed' || paper.venue?.includes('Journal') || paper.venue?.includes('Medicine')) {
+                            reliabilityBadge = '<span class="reliability-badge"><i class="fas fa-check-circle"></i> Reliable Source</span>';
+                        } else if (paper.source === 'MedlinePlus') {
+                            reliabilityBadge = '<span class="reliability-badge" style="background-color: #4CAF50;"><i class="fas fa-check-circle"></i> Patient-Friendly</span>';
+                        } else if (paper.source === 'Mayo Clinic' || paper.source === 'Cleveland Clinic') {
+                            reliabilityBadge = '<span class="reliability-badge" style="background-color: #2196F3;"><i class="fas fa-hospital"></i> Medical Institution</span>';
+                        } else if (paper.source === 'CDC' || paper.source === 'NIH') {
+                            reliabilityBadge = '<span class="reliability-badge" style="background-color: #673AB7;"><i class="fas fa-shield-alt"></i> Government Source</span>';
+                        }
+                        
+                        // Create simplified explanation if available
+                        let simplifiedHtml = '';
+                        if (paper.simplified_explanation) {
+                            simplifiedHtml = `
+                                <div class="simple-explanation" style="display: ${currentView === 'simplified' ? 'block' : 'none'}">
+                                    <h4>Plain Language Explanation:</h4>
+                                    <p>${paper.simplified_explanation}</p>
+                                </div>
+                            `;
+                        }
+                        
                         resultsHtml += `
-                            <div class="article-item">
-                                <h2>${paper.title}</h2>
+                            <div class="article-item ${currentView === 'simplified' ? 'simplified' : ''}">
+                                <h2>${paper.title} ${reliabilityBadge}</h2>
                                 <p class="article-authors">${paper.authors ? paper.authors.map(a => a.name).join(', ') : 'Unknown authors'}</p>
                                 <p class="article-venue">${paper.venue || 'Unknown venue'} (${paper.year || 'Unknown year'})</p>
                                 <p class="article-abstract">${paper.abstract || 'No abstract available for this article.'}</p>
-                                <a href="${paper.url}" target="_blank" class="article-link">Read Full Article <i class="fas fa-external-link-alt"></i></a>
+                                ${simplifiedHtml}
+                                <a href="${paper.url}" target="_blank" class="article-link">Read Full Information <i class="fas fa-external-link-alt"></i></a>
                             </div>
                         `;
                     });
@@ -427,8 +670,8 @@
                     resultsContainer.innerHTML = resultsHtml;
                 })
                 .catch(error => {
-                    console.error('Error searching Semantic Scholar:', error);
-                    resultsContainer.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i> Error searching for articles. Please try again later.</div>';
+                    console.error('Error searching for disease information:', error);
+                    resultsContainer.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i> Error searching for disease information. Please try again later.</div>';
                 });
         }
     </script>
