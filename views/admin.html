@@ -173,6 +173,30 @@
             <div id="email-test-result" style="margin-top: 15px; display: none;"></div>
         </div>
 
+        <!-- News Ticker Management Section -->
+        <div class="news-ticker-container" style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #333;">Health News Ticker</h3>
+            <p style="color: #666; margin-bottom: 15px;">Add important health announcements, alerts, or news that will be displayed in a ticker on the homepage.</p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #555;">Current Announcements</label>
+                <div id="current-announcements" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: #f9f9f9;">
+                    <p style="color: #888; font-style: italic; text-align: center;">No announcements currently active</p>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #555;">Add New Announcement</label>
+                <textarea id="new-announcement" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; resize: vertical; min-height: 80px;" placeholder="Type your announcement here... (e.g., 'Flu shots available at all major hospitals', 'COVID-19 testing available at Central Hospital')"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="add-announcement" style="background: #4CAF50; color: white; border: none; padding: 9px 15px; border-radius: 5px; cursor: pointer; flex: 1;">Add to Ticker</button>
+                <button id="clear-announcements" style="background: #f44336; color: white; border: none; padding: 9px 15px; border-radius: 5px; cursor: pointer; flex: 1;">Clear All</button>
+            </div>
+            <div id="announcement-result" style="margin-top: 15px; display: none;"></div>
+        </div>
+
         <div class="filter-bar">
             <select id="status-filter">
                 <option value="">All Status</option>
@@ -219,6 +243,7 @@
         window.addEventListener('load', async () => {
             await checkAuthentication();
             await loadAppointments();
+            loadAnnouncements(); // Load existing announcements
         });
 
         // Update appointments loading function
@@ -688,6 +713,160 @@
                 resultDiv.style.color = '#f44336';
                 resultDiv.style.backgroundColor = '#ffebee';
                 resultDiv.textContent = `Error: ${error.message || 'Failed to send email'}`;
+            }
+        });
+
+        // News Ticker Management Functions
+        
+        // Load existing announcements
+        function loadAnnouncements() {
+            try {
+                const announcements = JSON.parse(localStorage.getItem('healthAnnouncements')) || [];
+                const announcementsContainer = document.getElementById('current-announcements');
+                
+                if (announcements.length === 0) {
+                    announcementsContainer.innerHTML = '<p style="color: #888; font-style: italic; text-align: center;">No announcements currently active</p>';
+                    return;
+                }
+                
+                announcementsContainer.innerHTML = '';
+                
+                announcements.forEach((announcement, index) => {
+                    const announcementElement = document.createElement('div');
+                    announcementElement.style.padding = '8px';
+                    announcementElement.style.marginBottom = '8px';
+                    announcementElement.style.borderBottom = '1px solid #eee';
+                    announcementElement.style.display = 'flex';
+                    announcementElement.style.justifyContent = 'space-between';
+                    announcementElement.style.alignItems = 'center';
+                    
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = announcement;
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteButton.style.background = 'none';
+                    deleteButton.style.border = 'none';
+                    deleteButton.style.color = '#f44336';
+                    deleteButton.style.cursor = 'pointer';
+                    deleteButton.style.padding = '5px';
+                    deleteButton.title = 'Remove announcement';
+                    
+                    deleteButton.addEventListener('click', () => removeAnnouncement(index));
+                    
+                    announcementElement.appendChild(textSpan);
+                    announcementElement.appendChild(deleteButton);
+                    announcementsContainer.appendChild(announcementElement);
+                });
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+            }
+        }
+        
+        // Add announcement to ticker
+        function addAnnouncement() {
+            try {
+                const newAnnouncementText = document.getElementById('new-announcement').value.trim();
+                if (!newAnnouncementText) {
+                    showAnnouncementResult('Please enter an announcement text', 'error');
+                    return;
+                }
+                
+                let announcements = JSON.parse(localStorage.getItem('healthAnnouncements')) || [];
+                announcements.push(newAnnouncementText);
+                localStorage.setItem('healthAnnouncements', JSON.stringify(announcements));
+                
+                // Clear input field
+                document.getElementById('new-announcement').value = '';
+                
+                // Reload announcements display
+                loadAnnouncements();
+                
+                // Show success message
+                showAnnouncementResult('Announcement added successfully', 'success');
+                
+                // Update the ticker in real-time (if the user has the home page open in another tab)
+                updateLiveAnnouncements();
+            } catch (error) {
+                console.error('Error adding announcement:', error);
+                showAnnouncementResult('Error adding announcement', 'error');
+            }
+        }
+        
+        // Remove announcement from ticker
+        function removeAnnouncement(index) {
+            try {
+                let announcements = JSON.parse(localStorage.getItem('healthAnnouncements')) || [];
+                announcements.splice(index, 1);
+                localStorage.setItem('healthAnnouncements', JSON.stringify(announcements));
+                
+                // Reload announcements display
+                loadAnnouncements();
+                
+                // Show success message
+                showAnnouncementResult('Announcement removed successfully', 'success');
+                
+                // Update the ticker in real-time (if the user has the home page open in another tab)
+                updateLiveAnnouncements();
+            } catch (error) {
+                console.error('Error removing announcement:', error);
+                showAnnouncementResult('Error removing announcement', 'error');
+            }
+        }
+        
+        // Clear all announcements
+        function clearAllAnnouncements() {
+            if (confirm('Are you sure you want to remove all announcements?')) {
+                localStorage.setItem('healthAnnouncements', JSON.stringify([]));
+                loadAnnouncements();
+                showAnnouncementResult('All announcements cleared', 'success');
+                updateLiveAnnouncements();
+            }
+        }
+        
+        // Update announcements in real-time (we'll use localStorage for demo, but in a real app this would use websockets)
+        function updateLiveAnnouncements() {
+            // In a real app, this would send a message via websockets to update all connected clients
+            // For our demo, we'll use localStorage which will update other tabs/windows of the same browser
+            localStorage.setItem('announcements_updated', Date.now().toString());
+        }
+        
+        // Show result message
+        function showAnnouncementResult(message, type) {
+            const resultElement = document.getElementById('announcement-result');
+            resultElement.style.display = 'block';
+            resultElement.style.padding = '10px';
+            resultElement.style.borderRadius = '5px';
+            resultElement.style.marginTop = '15px';
+            
+            if (type === 'error') {
+                resultElement.style.backgroundColor = '#ffebee';
+                resultElement.style.color = '#c62828';
+                resultElement.style.border = '1px solid #ffcdd2';
+            } else {
+                resultElement.style.backgroundColor = '#e8f5e9';
+                resultElement.style.color = '#2e7d32';
+                resultElement.style.border = '1px solid #c8e6c9';
+            }
+            
+            resultElement.textContent = message;
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                resultElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Set up event listeners for announcements
+        document.addEventListener('DOMContentLoaded', () => {
+            const addAnnouncementBtn = document.getElementById('add-announcement');
+            if (addAnnouncementBtn) {
+                addAnnouncementBtn.addEventListener('click', addAnnouncement);
+            }
+            
+            const clearAnnouncementsBtn = document.getElementById('clear-announcements');
+            if (clearAnnouncementsBtn) {
+                clearAnnouncementsBtn.addEventListener('click', clearAllAnnouncements);
             }
         });
     </script>

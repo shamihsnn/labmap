@@ -1173,3 +1173,50 @@ function getStaticDiseaseInfo(query) {
         }
     ];
 }
+
+// Add announcements API endpoints after other API endpoints
+
+// API endpoints for health announcements
+app.get('/api/announcements', (req, res) => {
+    try {
+        // For now, we'll return a success response since we're using localStorage
+        // In a real implementation, you would fetch from a database here
+        res.json({ success: true, message: 'Announcements are managed client-side for now' });
+    } catch (error) {
+        console.error('Error fetching announcements:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch announcements' });
+    }
+});
+
+app.post('/api/announcements', (req, res) => {
+    try {
+        // For now, we'll return a success response since we're using localStorage
+        // In a real implementation, you would save to a database here
+        res.json({ success: true, message: 'Announcement added successfully' });
+    } catch (error) {
+        console.error('Error adding announcement:', error);
+        res.status(500).json({ success: false, error: 'Failed to add announcement' });
+    }
+});
+
+app.delete('/api/announcements/:id', (req, res) => {
+    try {
+        // For now, we'll return a success response since we're using localStorage
+        // In a real implementation, you would delete from a database here
+        res.json({ success: true, message: 'Announcement removed successfully' });
+    } catch (error) {
+        console.error('Error removing announcement:', error);
+        res.status(500).json({ success: false, error: 'Failed to remove announcement' });
+    }
+});
+
+app.delete('/api/announcements', (req, res) => {
+    try {
+        // For now, we'll return a success response since we're using localStorage
+        // In a real implementation, you would clear all announcements from a database here
+        res.json({ success: true, message: 'All announcements cleared successfully' });
+    } catch (error) {
+        console.error('Error clearing announcements:', error);
+        res.status(500).json({ success: false, error: 'Failed to clear announcements' });
+    }
+});

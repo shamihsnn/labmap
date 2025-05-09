@@ -70,6 +70,322 @@
         .whatsapp-btn:hover::after {
             opacity: 1;
         }
+
+        /* News Ticker Styles */
+        .news-ticker-container {
+            width: 100%;
+            background: linear-gradient(90deg, #e6212f 0%, #f10d0d 50%, #e6212f 100%);
+            color: white;
+            overflow: hidden;
+            padding: 8px 0;
+            position: relative;
+            margin-bottom: 0;
+            z-index: 10;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .news-ticker-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0) 50%,
+                rgba(255, 255, 255, 0.1) 100%);
+            pointer-events: none;
+        }
+
+        /* Single-item ticker */
+        .ticker-wrap {
+            position: relative;
+            width: 100%;
+            height: 24px;
+            overflow: hidden;
+        }
+
+        /* Smoke effect particles */
+        .ticker-wrap::before,
+        .ticker-wrap::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 5%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ticker-wrap::before {
+            left: 0;
+            background: linear-gradient(to right, #f10d0d 0%, rgba(241, 13, 13, 0) 100%);
+        }
+
+        .ticker-wrap::after {
+            right: 0;
+            background: linear-gradient(to left, #f10d0d 0%, rgba(241, 13, 13, 0) 100%);
+        }
+
+        /* Smoke particle effects */
+        .smoke-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            z-index: 1;
+            animation: float 3s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .smoke-particle:nth-child(1) {
+            left: 10%;
+            top: 70%;
+            animation-delay: 0.2s;
+        }
+
+        .smoke-particle:nth-child(2) {
+            left: 20%;
+            top: 30%;
+            animation-delay: 0.7s;
+        }
+
+        .smoke-particle:nth-child(3) {
+            left: 30%;
+            top: 50%;
+            animation-delay: 0.4s;
+        }
+
+        .smoke-particle:nth-child(4) {
+            left: 70%;
+            top: 20%;
+            animation-delay: 0.1s;
+        }
+
+        .smoke-particle:nth-child(5) {
+            left: 80%;
+            top: 60%;
+            animation-delay: 0.9s;
+        }
+
+        .smoke-particle:nth-child(6) {
+            left: 90%;
+            top: 40%;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-20px) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Light streak effect */
+        .light-streak {
+            position: absolute;
+            height: 2px;
+            width: 50px;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+            z-index: 1;
+            top: 50%;
+            transform: translateY(-50%);
+            filter: blur(1px);
+            opacity: 0;
+            animation: streak 5s linear infinite;
+        }
+
+        .light-streak:nth-child(1) {
+            animation-delay: 0s;
+            left: 10%;
+        }
+
+        .light-streak:nth-child(2) {
+            animation-delay: 1s;
+            left: 40%;
+        }
+
+        .light-streak:nth-child(3) {
+            animation-delay: 3s;
+            left: 70%;
+        }
+
+        @keyframes streak {
+            0% {
+                transform: translate(-50px, -50%) rotate(30deg);
+                opacity: 0;
+            }
+            20% {
+                opacity: 1;
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(150px, -50%) rotate(30deg);
+                opacity: 0;
+            }
+        }
+
+        .ticker-item {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            left: 100%;
+            animation: tickerMove 15s linear infinite;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+            z-index: 3;
+        }
+
+        /* Glow effect on text */
+        .ticker-text {
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 2px rgba(255, 255, 255, 0.2), 0 0 4px rgba(255, 255, 255, 0.2);
+            }
+            to {
+                text-shadow: 0 0 6px rgba(255, 255, 255, 0.5), 0 0 8px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        .ticker-icon {
+            margin: 0 10px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.3));
+            animation: pulse 2s infinite, shake 3s ease-in-out infinite;
+        }
+
+        /* Pause animation on hover */
+        .news-ticker-container:hover .ticker-item,
+        .news-ticker-container:hover .smoke-particle,
+        .news-ticker-container:hover .light-streak,
+        .news-ticker-container:hover .ticker-text,
+        .news-ticker-container:hover .ticker-icon {
+            animation-play-state: paused;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-1px); }
+            20%, 40%, 60%, 80% { transform: translateX(1px); }
+        }
+
+        @keyframes tickerMove {
+            0% { left: 100%; transform: translateX(0); }
+            2% { left: 100%; transform: translateX(-5%); } /* Quicker entry */
+            98% { left: 0%; transform: translateX(-95%); } /* Quicker exit */
+            100% { left: 0%; transform: translateX(-100%); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+
+        @media (max-width: 768px) {
+            .ticker-item {
+                animation-duration: 12s;
+            }
+        }
+
+        /* Override search container to make it transparent and part of the map */
+        .search-container {
+            margin-top: 15px;
+            position: relative;
+            z-index: 10;
+            padding: 0 15px;
+        }
+        
+        /* Override search box to remove white background */
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 12px 15px;
+            border-radius: 25px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Adjust map container to accommodate the new layout */
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            margin-top: 0;
+        }
+        
+        /* Override search box styles for a more professional look */
+        .search-icon {
+            color: #f10d0d;
+            margin-right: 10px;
+            font-size: clamp(16px, 2vw, 18px);
+        }
+        
+        #search {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 8px;
+            font-size: clamp(14px, 2vw, 16px);
+            background: transparent;
+            width: 100%;
+            font-weight: 500;
+        }
+        
+        #search::placeholder {
+            color: #888;
+            opacity: 0.8;
+        }
+        
+        .search-button {
+            background: #f10d0d;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: clamp(14px, 2vw, 16px);
+            white-space: nowrap;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(241, 13, 13, 0.3);
+        }
+        
+        .search-button:hover {
+            background: #d50b0b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(241, 13, 13, 0.4);
+        }
+        
+        .search-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(241, 13, 13, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -101,6 +417,30 @@
     <a href="https://wa.me/923155170020" class="whatsapp-btn" target="_blank">
         <i class="fab fa-whatsapp"></i>
     </a>
+
+    <!-- News Ticker -->
+    <div class="news-ticker-container">
+        <div class="ticker-wrap">
+            <!-- Light streaks -->
+            <div class="light-streak"></div>
+            <div class="light-streak"></div>
+            <div class="light-streak"></div>
+            
+            <!-- Smoke particles -->
+            <div class="smoke-particle"></div>
+            <div class="smoke-particle"></div>
+            <div class="smoke-particle"></div>
+            <div class="smoke-particle"></div>
+            <div class="smoke-particle"></div>
+            <div class="smoke-particle"></div>
+            
+            <!-- Actual ticker content -->
+            <div class="ticker-item">
+                <span class="ticker-icon"><i class="fas fa-exclamation-circle"></i></span>
+                <span class="ticker-text">Loading health announcements...</span>
+            </div>
+        </div>
+    </div>
 
     <div class="search-container">
         
@@ -236,6 +576,57 @@
             console.log('Initializing ratings system');
             initializeRatings();
         }
+
+        // News Ticker Functionality
+        loadNewsTicker();
+        
+        // Listen for announcements updates from admin panel
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'announcements_updated') {
+                loadNewsTicker();
+            }
+        });
     });
+    
+    // Function to load news ticker content
+    function loadNewsTicker() {
+        const tickerContent = document.querySelector('.ticker-text');
+        if (!tickerContent) return;
+        
+        const announcements = JSON.parse(localStorage.getItem('healthAnnouncements')) || [];
+        
+        let tickerText = 'Welcome to MediMap - Finding healthcare services made easy!';
+        if (announcements.length > 0) {
+            tickerText = announcements.join(' • ');
+        }
+        
+        // Set the text for the ticker item
+        tickerContent.textContent = tickerText;
+        
+        // Give the browser a moment to calculate actual dimensions
+        setTimeout(() => {
+            // Adjust animation duration based on content length
+            const tickerItem = document.querySelector('.ticker-item');
+            if (tickerItem) {
+                const textWidth = tickerItem.offsetWidth;
+                const viewportWidth = window.innerWidth;
+                
+                // Calculate duration: pixels per second for readable speed
+                // Higher value = faster speed
+                const pixelsPerSecond = 120;
+                
+                // Total distance to travel is viewport width + text width
+                const totalDistance = viewportWidth + textWidth;
+                
+                // Calculate duration based on content length and screen width
+                let duration = totalDistance / pixelsPerSecond;
+                
+                // Set minimum and maximum duration
+                duration = Math.max(8, Math.min(duration, 15));
+                
+                tickerItem.style.animationDuration = `${duration}s`;
+            }
+        }, 100);
+    }
 </script>
 </html>
