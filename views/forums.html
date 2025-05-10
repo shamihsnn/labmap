@@ -1,0 +1,299 @@
+\<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediMap - Community Forums</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar and Navigation */
+        .hamburger-menu {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #f10d0d;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background-color: white;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: left 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .sidebar.active {
+            left: 0;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background-color: #f10d0d;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 22px;
+            margin: 0;
+        }
+        
+        .close-sidebar {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .sidebar-content {
+            padding: 20px 0;
+        }
+        
+        .sidebar-menu ul {
+            list-style: none;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: #555;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        
+        .sidebar-menu a:hover,
+        .sidebar-menu li.active a {
+            background-color: #f8f9fa;
+            color: #f10d0d;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
+        }
+        
+        /* Forum Styles */
+        .forum-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .forum-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .forum-header h1 {
+            color: #f10d0d;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .forum-header p {
+            color: #555;
+            font-size: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        .forum-guidelines {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .forum-guidelines h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .forum-guidelines ul {
+            padding-left: 20px;
+        }
+        
+        .forum-guidelines li {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        #disqus_thread {
+            margin-top: 20px;
+            min-height: 400px;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .forum-container {
+                margin: 60px 10px 20px;
+                padding: 15px;
+            }
+            
+            .forum-header h1 {
+                font-size: 24px;
+            }
+            
+            .hamburger-menu {
+                top: 10px;
+                left: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="forum-page">
+    <!-- Hamburger Menu Button -->
+    <div class="hamburger-menu">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MediMap Menu</h2>
+            <button class="close-sidebar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-menu">
+                <ul>
+                    <li><a href="/"><i class="fas fa-map-marker-alt"></i> Map</a></li>
+                    <li><a href="/semantic-scholar"><i class="fas fa-search"></i> Search Articles</a></li>
+                    <li><a href="/report-vault"><i class="fas fa-file-medical"></i> Report Vault</a></li>
+                    <li class="active"><a href="/forums"><i class="fas fa-comments"></i> Community Forums</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for sidebar -->
+    <div class="sidebar-overlay"></div>
+    
+    <div class="forum-container">
+        <div class="forum-header">
+            <h1>MediMap Community Forums</h1>
+            <p>Join our healthcare community to discuss medical topics, share experiences, and connect with others. Ask questions, share knowledge, and support each other on your healthcare journey.</p>
+        </div>
+        
+        <div class="forum-guidelines">
+            <h3>Community Guidelines</h3>
+            <ul>
+                <li>Be respectful and considerate of others' experiences and opinions.</li>
+                <li>Do not share personal identifiable information.</li>
+                <li>Medical advice shared here should not replace professional medical consultation.</li>
+                <li>Stay on topic and help keep discussions relevant and valuable.</li>
+                <li>No spam, promotional content, or inappropriate material.</li>
+            </ul>
+        </div>
+        
+        <!-- Disqus Forum Section -->
+        <div id="disqus_thread"></div>
+        <script>
+            /**
+            *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+            *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables    */
+            
+            var disqus_config = function () {
+                this.page.url = window.location.href;  // Replace PAGE_URL with your page's canonical URL variable
+                this.page.identifier = 'medimap_forums'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+            };
+            
+            (function() { // DON'T EDIT BELOW THIS LINE
+                var d = document, s = d.createElement('script');
+                s.src = 'https://medimap-3.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hamburger menu functionality
+            const hamburgerMenu = document.querySelector('.hamburger-menu');
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarOverlay = document.querySelector('.sidebar-overlay');
+            const closeSidebar = document.querySelector('.close-sidebar');
+
+            hamburgerMenu.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                sidebarOverlay.classList.add('active');
+            });
+
+            function closeSidebarFunc() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            }
+
+            closeSidebar.addEventListener('click', closeSidebarFunc);
+            sidebarOverlay.addEventListener('click', closeSidebarFunc);
+        });
+    </script>
+    
+    <!-- Disqus Comment Count Script -->
+    <script id="dsq-count-scr" src="//medimap-3.disqus.com/count.js" async></script>
+</body>
+</html>

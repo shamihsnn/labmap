@@ -498,9 +498,9 @@
         
         <div class="simplified-toggle" style="display: block;">
             <p><strong>Select Preferred Source Type:</strong></p>
-            <button id="pubmed-toggle" class="toggle-button active" onclick="setSourceFilter('pubmed')"><i class="fas fa-microscope"></i> PubMed/Academic</button>
+            <button id="pubmed-toggle" class="toggle-button" onclick="setSourceFilter('pubmed')"><i class="fas fa-microscope"></i> PubMed/Academic</button>
             <button id="medlineplus-toggle" class="toggle-button" onclick="setSourceFilter('medlineplus')"><i class="fas fa-user-md"></i> MedlinePlus</button>
-            <button id="mayo-toggle" class="toggle-button" onclick="setSourceFilter('mayo')"><i class="fas fa-hospital"></i> Mayo Clinic</button>
+            <button id="mayo-toggle" class="toggle-button active" onclick="setSourceFilter('mayo')"><i class="fas fa-hospital"></i> Mayo Clinic</button>
             <button id="cdc-toggle" class="toggle-button" onclick="setSourceFilter('cdc')"><i class="fas fa-shield-alt"></i> CDC/NIH</button>
         </div>
         
@@ -547,7 +547,7 @@
 
         // Current view mode
         let currentView = 'professional';
-        let currentSource = 'pubmed';
+        let currentSource = 'mayo';
 
         // Set source filter
         function setSourceFilter(source) {
@@ -616,7 +616,7 @@
                     }
 
                     if (!data.papers || data.papers.length === 0) {
-                        resultsContainer.innerHTML = '<div class="no-results"><i class="fas fa-search"></i> No reliable information found on this topic. Try different keywords or a more common medical term.</div>';
+                        displayNoResultsWithSuggestions(query, resultsContainer);
                         return;
                     }
 
@@ -673,6 +673,44 @@
                     console.error('Error searching for disease information:', error);
                     resultsContainer.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i> Error searching for disease information. Please try again later.</div>';
                 });
+        }
+
+        // Function to display no results message with suggestions to try other sources
+        function displayNoResultsWithSuggestions(query, container) {
+            const sourceNames = {
+                'pubmed': 'PubMed/Academic',
+                'mayo': 'Mayo Clinic',
+                'medlineplus': 'MedlinePlus',
+                'cdc': 'CDC/NIH'
+            };
+            
+            const currentSourceName = sourceNames[currentSource] || currentSource;
+            
+            // Create array of other available sources
+            const otherSources = Object.entries(sourceNames)
+                .filter(([key, _]) => key !== currentSource)
+                .map(([_, name]) => name);
+                
+            const otherSourcesText = otherSources.join(', ');
+            
+            const html = `
+                <div class="no-results">
+                    <i class="fas fa-exclamation-circle"></i> 
+                    <p><strong>${currentSourceName}</strong> doesn't have information on "${query}".</p>
+                    <p>Please try searching in other sources like ${otherSourcesText} as they might have relevant information on this topic.</p>
+                    <div style="margin-top: 15px;">
+                        ${Object.entries(sourceNames)
+                            .filter(([key, _]) => key !== currentSource)
+                            .map(([key, name]) => `
+                                <button class="toggle-button" style="margin: 5px;" onclick="setSourceFilter('${key}'); searchDisease();">
+                                    Try ${name}
+                                </button>
+                            `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
         }
     </script>
 </body>

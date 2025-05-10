@@ -715,6 +715,14 @@ app.get('/report-vault', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/report-vault.html'));
 });
 
+app.get('/forums', (req, res) => {
+    res.sendFile(path.join(__dirname, '../views/forums.html'));
+});
+
+app.get('/forum', (req, res) => {
+    res.redirect('/forums');
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
