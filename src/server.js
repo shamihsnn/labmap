@@ -735,24 +735,330 @@ app.get('/ambulance-loader.svg', (req, res) => {
 
 
 function formatAIResponse(text) {
-    // Add markdown-style formatting
-    const formatted = text
-        // Format headings
-        .replace(/^(.*?):\s*$/gm, '## $1\n')
-        // Format lists
-        .replace(/^[-*]\s+(.*?)$/gm, '• $1')
-        // Format important points
-        .replace(/(Important|Note|Warning):/g, '**$1:**')
-        // Format medical terms
-        .replace(/\b([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*)\b(?=\s*:)/g, '**$1**')
-        // Add line breaks for readability
-        .replace(/\n\n/g, '\n\n<br>\n\n')
-        // Format numbers and percentages
-        .replace(/\b(\d+(?:\.\d+)?%?)\b/g, '<strong>$1</strong>')
+    // Clean and normalize text
+    let formatted = text.trim();
     
-        .replace(/\n---+\n/g, '\n<hr>\n');
+    // Pre-process reports with markdown-style bold headings and numbered headings
+    // Handle report titles
+    formatted = formatted.replace(/^\*\*([^*\n]+)\*\*$/gm, '<h1 class="medical-heading-1">$1</h1>');
+    
+    // Handle patient data fields with bold markers
+    formatted = formatted.replace(/\*\*([^:*]+):\*\*\s*([^*\n]+)(?=\s+\*\*|\s*$)/g, 
+        '<div class="patient-info-field"><span class="field-name">$1:</span> <span class="field-value">$2</span></div>');
+    
+    // Handle numbered sections with bold markers
+    formatted = formatted.replace(/^\*\*(\d+)\.\s+([^:*]+):\*\*(.*)$/gm, 
+        '<h2 class="medical-heading-2"><span class="section-number">$1</span> $2</h2>$3');
+    
+    // Handle plain numbered sections
+    formatted = formatted.replace(/^(\d+)\.\s+([^:]+):(.*)$/gm, 
+        '<h2 class="medical-heading-2"><span class="section-number">$1</span> $2</h2>$3');
+    
+    // Handle bold section headings with colon
+    formatted = formatted.replace(/^\*\*([^:*]+):\*\*(.*)$/gm, '<h2 class="medical-heading-2">$1</h2>$2');
+    
+    // Format headings (maintain hierarchy)
+    formatted = formatted
+        // Main headings (H1)
+        .replace(/^(#{1,2})\s+(.+?)$/gm, '<h1 class="medical-heading-1">$2</h1>')
+        // Subheadings (H2)
+        .replace(/^(#{3})\s+(.+?)$/gm, '<h2 class="medical-heading-2">$2</h2>')
+        // Sub-subheadings (H3)
+        .replace(/^(#{4,})\s+(.+?)$/gm, '<h3 class="medical-heading-3">$2</h3>')
+        // Alternative heading format (with colon)
+        .replace(/^([A-Z][A-Za-z\s]+):\s*$/gm, '<h2 class="medical-heading-2">$1</h2>')
+        .replace(/^([A-Z][A-Za-z\s]+) \((.+?)\):\s*$/gm, '<h2 class="medical-heading-2">$1 <span class="medical-heading-subtitle">$2</span></h2>');
+    
+    // Format sections with iconography
+    formatted = formatted
+        .replace(/\b(Findings|Analysis|Assessment):/gi, '<div class="medical-section"><span class="medical-icon">🔍</span> <strong>$1:</strong>')
+        .replace(/\b(Diagnosis|Impression|Conclusion):/gi, '<div class="medical-section diagnosis"><span class="medical-icon">🩺</span> <strong>$1:</strong>')
+        .replace(/\b(Recommendation|Treatment|Plan):/gi, '<div class="medical-section recommendation"><span class="medical-icon">💊</span> <strong>$1:</strong>')
+        .replace(/\b(Warning|Caution|Alert|Attention):/gi, '<div class="medical-section warning"><span class="medical-icon">⚠️</span> <strong>$1:</strong>')
+        .replace(/\b(Note|Important):/gi, '<div class="medical-section note"><span class="medical-icon">📝</span> <strong>$1:</strong>');
+        
+    // Close div tags for sections (if they're not at the end of the text)
+    formatted = formatted.replace(/(<div class="medical-section(?:.*?)">.*?)(\n\n|\n(?=<))/g, '$1</div>$2');
+    
+    // Make sure all sections are closed at the end of the text
+    if (formatted.includes('<div class="medical-section') && !formatted.endsWith('</div>')) {
+        formatted += '</div>';
+    }
+    
+    // Format medical findings and key information 
+    formatted = formatted
+        // Process numbered lists while preserving them
+        .replace(/^(\d+)\.\s+(.+)$/gm, function(match, number, content) {
+            // Check if the content contains a key finding or diagnosis
+            if (/diagnosis|finding|assessment|impression|conclusion/i.test(content)) {
+                return `<h3 class="medical-finding"><span class="finding-number">${number}</span> ${content}</h3>`;
+            }
+            return `<li><span class="list-number">${number}.</span> ${content}</li>`;
+        })
+        
+        // Format medical terms and diagnostic terms
+        .replace(/\b(diagnosis|finding|assessment|impression|conclusion|results|analysis|recommendation|treatment|prognosis|etiology|pathology|differential|anatomy|physiology):/gi, '<span class="medical-term">$1:</span>')
+        
+        // Format percentages and measurements (but don't catch numbered lists)
+        .replace(/\b(\d+(?:\.\d+)?(?:\s*%|\s*cm|\s*mm|\s*μm|\s*units|\s*mg\/dL))\b/g, '<span class="measurement">$1</span>')
+        
+        // Highlight medical terms
+        .replace(/\b(acute|chronic|benign|malignant|lesion|nodule|tumor|inflammation|infection|fracture|sprain|strain|hypertension|diabetes|carcinoma|necrosis|edema|atrophy|trauma|hyperplasia)\b/gi, '<span class="highlighted-term">$1</span>')
+        
+        // Bullet points and lists
+        .replace(/^\*\s+(.+)$/gm, '<li class="medical-bullet">$1</li>')
+        .replace(/^[•*-]\s+(.+)$/gm, '<li class="medical-bullet">$1</li>');
+        
+    // Ensure lists are properly formed
+    formatted = formatted
+        .replace(/(<li.*?>.*?<\/li>)\s*(<li)/g, '$1$2')
+        .replace(/(<li class="medical-bullet">.*<\/li>)(?!\s*<li)/g, '<ul class="medical-list">$1</ul>')
+        .replace(/(<li><span class="list-number">.*<\/li>)(?!\s*<li)/g, '<ol class="medical-numbered-list">$1</ol>');
+    
+    // Format paragraphs for readability
+    formatted = formatted.replace(/\n{2,}/g, '</p><p class="medical-paragraph">');
+    
+    // Create distinctive summary box if there's a Summary section
+    formatted = formatted.replace(/(<h[1-3][^>]*>Summary.*?<\/h[1-3]>)(.*?)(<h[1-3]|$)/s, 
+        '<div class="medical-summary-box"><div class="summary-header">$1</div><div class="summary-content">$2</div></div>$3');
+    
+    // Add tooltips for complex terms (sample terms, would need to be expanded)
+    const medicalTerms = {
+        'hypertension': 'High blood pressure',
+        'arrhythmia': 'Irregular heartbeat',
+        'tachycardia': 'Abnormally rapid heart rate',
+        'bradycardia': 'Abnormally slow heart rate',
+        'edema': 'Swelling caused by excess fluid',
+        'hyperglycemia': 'High blood sugar',
+        'hypoglycemia': 'Low blood sugar',
+        'hypodense': 'Lower density (appears darker) on imaging',
+        'hyperdense': 'Higher density (appears brighter) on imaging',
+        'parenchyma': 'The functional tissue of an organ',
+        'attenuation': 'Reduction in intensity of energy as it passes through matter',
+        'contusion': 'A bruise (injury) with intact skin surface',
+        'hematoma': 'A collection of blood outside blood vessels'
+    };
+    
+    // Add tooltips for medical terms
+    Object.keys(medicalTerms).forEach(term => {
+        const regex = new RegExp(`\\b${term}\\b`, 'gi');
+        formatted = formatted.replace(regex, `<span class="tooltip-term" title="${medicalTerms[term]}">$&</span>`);
+    });
+    
+    // Wrap everything in paragraphs if not already wrapped
+    if (!formatted.startsWith('<h') && !formatted.startsWith('<p') && !formatted.startsWith('<div') && !formatted.startsWith('<ul')) {
+        formatted = '<p class="medical-paragraph">' + formatted + '</p>';
+    }
+    
+    // General cleanup for final formatting 
+    formatted = formatted
+        // Ensure proper paragraph tags
+        .replace(/<\/p><p><\/p>/g, '</p>')
+        .replace(/<p><\/p>/g, '')
+        // Clean up any potentially unclosed tags
+        .replace(/<\/?(div|p|h1|h2|h3|ul|li)>(\s*)<\/?(div|p|h1|h2|h3|ul|li)>/g, '$2');
 
     return `<div class="formatted-response">
+        <style>
+            .formatted-response {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                line-height: 1.5;
+                color: #333;
+                padding: 5px;
+                font-size: 0.95em;
+            }
+            
+            .medical-heading-1 {
+                font-size: 1.35em;
+                color: #d32f2f;
+                border-bottom: 2px solid #d32f2f;
+                padding-bottom: 6px;
+                margin-top: 16px;
+                margin-bottom: 12px;
+                font-weight: 600;
+            }
+            
+            .medical-heading-2 {
+                font-size: 1.15em;
+                color: #1976d2;
+                margin-top: 14px;
+                margin-bottom: 10px;
+                font-weight: 600;
+                padding-left: 5px;
+                border-left: 3px solid #1976d2;
+            }
+            
+            .section-number {
+                display: inline-block;
+                background-color: #1976d2;
+                color: white;
+                border-radius: 50%;
+                width: 22px;
+                height: 22px;
+                text-align: center;
+                margin-right: 6px;
+                font-size: 0.85em;
+                line-height: 22px;
+            }
+            
+            .medical-heading-3 {
+                font-size: 1em;
+                color: #2e7d32;
+                margin-top: 12px;
+                margin-bottom: 8px;
+                font-weight: 600;
+            }
+            
+            .medical-heading-subtitle {
+                font-size: 0.75em;
+                color: #666;
+                font-weight: normal;
+            }
+            
+            .medical-paragraph {
+                margin: 8px 0;
+                font-size: 0.95em;
+            }
+            
+            .patient-info-field {
+                display: inline-block;
+                margin-right: 15px;
+                margin-bottom: 5px;
+                font-size: 0.9em;
+            }
+            
+            .field-name {
+                font-weight: bold;
+                color: #555;
+            }
+            
+            .field-value {
+                color: #000;
+            }
+            
+            .medical-section {
+                background-color: #f5f5f5;
+                border-radius: 8px;
+                padding: 10px 12px;
+                margin: 12px 0;
+                border-left: 4px solid #1976d2;
+                font-size: 0.95em;
+            }
+            
+            .medical-section.diagnosis {
+                background-color: #e3f2fd;
+                border-left-color: #1976d2;
+            }
+            
+            .medical-section.recommendation {
+                background-color: #e8f5e9;
+                border-left-color: #4caf50;
+            }
+            
+            .medical-section.warning {
+                background-color: #fff3e0;
+                border-left-color: #ff9800;
+            }
+            
+            .medical-section.note {
+                background-color: #f5f5f5;
+                border-left-color: #9e9e9e;
+            }
+            
+            .medical-icon {
+                margin-right: 6px;
+                font-size: 1.1em;
+            }
+            
+            .medical-term {
+                font-weight: 600;
+                color: #0d47a1;
+            }
+            
+            .measurement {
+                font-weight: 600;
+                color: #d32f2f;
+            }
+            
+            .medical-list {
+                padding-left: 20px;
+                margin: 8px 0;
+            }
+            
+            .medical-numbered-list {
+                padding-left: 20px;
+                margin: 8px 0;
+            }
+            
+            .medical-bullet {
+                margin-bottom: 6px;
+                position: relative;
+                font-size: 0.95em;
+            }
+            
+            .list-number {
+                color: #1976d2;
+                font-weight: 600;
+                margin-right: 4px;
+            }
+            
+            .medical-finding {
+                background-color: #e3f2fd;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 1em;
+                margin: 10px 0;
+            }
+            
+            .finding-number {
+                background-color: #1976d2;
+                color: white;
+                padding: 1px 6px;
+                border-radius: 50%;
+                margin-right: 6px;
+                font-size: 0.8em;
+            }
+            
+            .highlighted-term {
+                background-color: #fff9c4;
+                padding: 0 2px;
+                border-radius: 3px;
+            }
+            
+            .tooltip-term {
+                border-bottom: 1px dotted #666;
+                cursor: help;
+                position: relative;
+            }
+            
+            .medical-summary-box {
+                background-color: #e8f5e9;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                margin: 16px 0;
+                overflow: hidden;
+                font-size: 0.95em;
+            }
+            
+            .summary-header {
+                background-color: #4caf50;
+                color: white;
+                padding: 8px 12px;
+                font-weight: bold;
+            }
+            
+            .summary-header h1, .summary-header h2, .summary-header h3 {
+                color: white !important;
+                margin: 0;
+                border: none;
+                padding: 0;
+                font-size: 1.1em;
+            }
+            
+            .summary-content {
+                padding: 12px;
+            }
+        </style>
         ${formatted}
     </div>`;
 }

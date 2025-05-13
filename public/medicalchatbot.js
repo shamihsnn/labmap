@@ -1,6 +1,7 @@
 // Generate a unique session ID for this chat instance
 const sessionId = Math.random().toString(36).substring(7);
 let chatHistory = [];
+let attachedImage = null;
 
 document.getElementById('send-button').addEventListener('click', sendMessage);
 document.getElementById('user-input').addEventListener('keypress', (e) => {
@@ -9,31 +10,34 @@ document.getElementById('user-input').addEventListener('keypress', (e) => {
 
 document.getElementById('file-input').addEventListener('change', handleFileUpload);
 
-async function sendMessage(imageData = null) {
+async function sendMessage() {
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     
     let message = userInput.value.trim();
-    if (!message && !imageData) return;
+    if (!message && !attachedImage) return;
 
     try {
         // Add user message to chat
-        if (imageData) {
-            chatBox.innerHTML += `
-                <div class="message-container user">
-                    <div class="user-message">
-                        <img src="${imageData}" alt="Uploaded Image" class="uploaded-image">
-                        ${message ? `<p>${message}</p>` : ''}
-                    </div>
-                </div>`;
-            message = `[Image Analysis Request] ${message || 'Please analyze this medical image.'}`;
-        } else {
-            chatBox.innerHTML += `
-                <div class="message-container user">
-                    <div class="user-message">
-                        <p>${message}</p>
-                    </div>
-                </div>`;
+        let userMessageHTML = `
+            <div class="message-container user">
+                <div class="user-message">`;
+        
+        if (attachedImage) {
+            userMessageHTML += `<img src="${attachedImage}" alt="Uploaded Image" class="uploaded-image">`;
+        }
+        
+        if (message) {
+            userMessageHTML += `<p>${message}</p>`;
+        }
+        
+        userMessageHTML += `</div></div>`;
+        chatBox.innerHTML += userMessageHTML;
+
+        // Prepare message for backend
+        let backendMessage = message;
+        if (attachedImage) {
+            backendMessage = `[Image Analysis Request] ${message || 'Please analyze this medical image.'}`;
         }
 
         // Show typing indicator
@@ -52,8 +56,8 @@ async function sendMessage(imageData = null) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                message,
-                imageData: imageData ? imageData : null,
+                message: backendMessage,
+                imageData: attachedImage,
                 sessionId
             })
         });
@@ -66,18 +70,22 @@ async function sendMessage(imageData = null) {
             chatBox.innerHTML += `
                 <div class="message-container bot">
                     <div class="bot-message">
-                        <p>${data.reply}</p>
+                        ${data.reply}
                     </div>
                 </div>`;
             
             // Update local chat history
-            chatHistory.push({ role: 'user', content: message });
+            chatHistory.push({ role: 'user', content: backendMessage });
             chatHistory.push({ role: 'assistant', content: data.reply });
         } else {
             throw new Error(data.error || 'Failed to get response');
         }
 
+        // Clear input and reset attachedImage
         userInput.value = '';
+        attachedImage = null;
+        updateAttachmentIndicator(false);
+        
         chatBox.scrollTop = chatBox.scrollHeight;
 
     } catch (error) {
@@ -91,6 +99,27 @@ async function sendMessage(imageData = null) {
     }
 }
 
+function updateAttachmentIndicator(hasAttachment) {
+    const attachButton = document.querySelector('.file-upload .action-button');
+    if (hasAttachment) {
+        attachButton.innerHTML = '<i class="fas fa-times"></i>';
+        attachButton.style.background = '#4CAF50';
+        attachButton.setAttribute('title', 'Remove attachment');
+        attachButton.onclick = removeAttachment;
+    } else {
+        attachButton.innerHTML = '<i class="fas fa-paperclip"></i>';
+        attachButton.style.background = '';
+        attachButton.setAttribute('title', 'Attach an image');
+        attachButton.onclick = () => document.getElementById('file-input').click();
+    }
+}
+
+function removeAttachment() {
+    attachedImage = null;
+    updateAttachmentIndicator(false);
+    document.getElementById('file-input').value = '';
+}
+
 async function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file) {
@@ -100,9 +129,22 @@ async function handleFileUpload(event) {
         }
 
         const reader = new FileReader();
-        reader.onload = async function(e) {
-            const imageData = e.target.result;
-            await sendMessage(imageData);
+        reader.onload = function(e) {
+            attachedImage = e.target.result;
+            updateAttachmentIndicator(true);
+            // Show preview notification
+            const chatBox = document.getElementById('chat-box');
+            const previewNotification = document.createElement('div');
+            previewNotification.className = 'image-preview-notification';
+            previewNotification.innerText = 'Image attached. Type your message and press Enter to send.';
+            chatBox.appendChild(previewNotification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                if (previewNotification.parentNode) {
+                    previewNotification.parentNode.removeChild(previewNotification);
+                }
+            }, 3000);
         };
         reader.readAsDataURL(file);
     }
@@ -129,10 +171,11 @@ function handleDrop(e) {
     
     if (file && file.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onload = async function(e) {
-            const imageData = e.target.result;
-            await sendMessage(imageData);
+        reader.onload = function(e) {
+            attachedImage = e.target.result;
+            updateAttachmentIndicator(true);
         };
         reader.readAsDataURL(file);
     }
+    dropZone.classList.remove('drag-over');
 }

@@ -10,13 +10,17 @@
         :root {
             --primary-color: #1a73e8;
             --secondary-color: #f8f9fa;
+            --accent-color: #c91818;
             --text-color: #202124;
+            --success-color: #4CAF50;
             --border-radius: 12px;
+            --shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f5f5f5;
         }
         
         .chat-container {
@@ -25,10 +29,11 @@
             height: 90vh;
             background: white;
             border-radius: var(--border-radius);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
             position: relative;
+            overflow: hidden;
         }
         
         .chat-header {
@@ -37,10 +42,11 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            background: linear-gradient(to right, #ffffff, #f8f9fa);
         }
         
         .chat-header img {
-            max-width: 100px; /* Responsive logo */
+            max-width: 100px;
             height: auto;
         }
 
@@ -49,6 +55,7 @@
             overflow-y: auto;
             padding: 20px;
             background: var(--secondary-color);
+            scroll-behavior: smooth;
         }
         
         .message-container {
@@ -70,18 +77,20 @@
             background: var(--primary-color);
             color: white;
             margin-left: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .bot-message {
             background: white;
             color: var(--text-color);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .uploaded-image {
             max-width: 300px;
             border-radius: 8px;
             margin: 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .input-container {
@@ -99,7 +108,14 @@
             border: 1px solid #e0e0e0;
             border-radius: 24px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) inset;
+        }
+        
+        #user-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
         }
         
         .action-button {
@@ -110,11 +126,15 @@
             background: var(--primary-color);
             color: white;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .action-button:hover {
             transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         
         .typing-indicator {
@@ -137,6 +157,86 @@
         .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
         .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
         
+        .drag-over {
+            border: 2px dashed var(--primary-color);
+            background-color: rgba(26, 115, 232, 0.05);
+        }
+        
+        .image-preview-notification {
+            padding: 8px 12px;
+            background-color: #e8f0fe;
+            color: var(--primary-color);
+            border-radius: 4px;
+            margin: 8px 0;
+            font-size: 14px;
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Enhanced formatted response styles */
+        .formatted-response {
+            line-height: 1.6;
+        }
+        
+        .formatted-response h1, 
+        .formatted-response h2,
+        .formatted-response h3 {
+            color: var(--accent-color);
+            margin-top: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .formatted-response h1 {
+            font-size: 1.5em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        .formatted-response h2 {
+            font-size: 1.3em;
+        }
+        
+        .formatted-response h3 {
+            font-size: 1.1em;
+        }
+        
+        .formatted-response ul, 
+        .formatted-response ol {
+            padding-left: 24px;
+            margin: 8px 0;
+        }
+        
+        .formatted-response li {
+            margin-bottom: 4px;
+        }
+        
+        .formatted-response p {
+            margin: 8px 0;
+        }
+        
+        .formatted-response strong, 
+        .formatted-response b {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+        
+        .formatted-response hr {
+            border: 0;
+            height: 1px;
+            background: #e0e0e0;
+            margin: 16px 0;
+        }
+        
+        .formatted-response a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .formatted-response a:hover {
+            text-decoration: underline;
+        }
+        
         @keyframes typing {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-4px); }
@@ -146,99 +246,113 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .drag-over {
-            border: 2px dashed var(--primary-color);
-        }
 
         /* Responsive styles */
-       /* Updated Responsive styles */
-@media (max-width: 768px) {
-    .chat-container {
-        margin: 10px;
-        height: calc(100vh - 20px);
-    }
+        @media (max-width: 768px) {
+            .chat-container {
+                margin: 10px;
+                height: calc(100vh - 20px);
+            }
 
-    .chat-header {
-        padding: 12px;
-        gap: 8px;
-    }
+            .chat-header {
+                padding: 12px;
+                gap: 8px;
+            }
 
-    .chat-header img {
-        max-width: 60px;
-    }
+            .chat-header img {
+                max-width: 60px;
+            }
 
-    .chat-header h1 {
-        font-size: 1.2em;
-    }
+            .chat-header h1 {
+                font-size: 1.2em;
+            }
 
-    .chat-header h1 span {
-        display: block;
-        margin-top: 4px;
-        margin-left: 0;
-    }
+            .chat-header h1 span {
+                display: block;
+                margin-top: 4px;
+                margin-left: 0;
+            }
 
-    .user-message, .bot-message {
-        max-width: 85%;
-    }
+            .user-message, .bot-message {
+                max-width: 85%;
+            }
 
-    .input-container {
-        padding: 12px;
-    }
-}
+            .input-container {
+                padding: 12px;
+            }
+        }
 
-@media (max-width: 480px) {
-    .chat-container {
-        margin: 0;
-        height: 100vh;
-        border-radius: 0;
-    }
+        @media (max-width: 480px) {
+            .chat-container {
+                margin: 0;
+                height: 100vh;
+                border-radius: 0;
+            }
 
-    .chat-box {
-        padding: 12px;
-    }
+            .chat-box {
+                padding: 12px;
+            }
 
-    .user-message, .bot-message {
-        max-width: 90%;
-        padding: 10px 12px;
-    }
+            .user-message, .bot-message {
+                max-width: 90%;
+                padding: 10px 12px;
+            }
 
-    .uploaded-image {
-        max-width: 100%;
-    }
-}
+            .uploaded-image {
+                max-width: 100%;
+            }
+        }
 
+        .chat-header h1 {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        
         .chat-header h1 span {
             font-size: 0.8em;
-            color: #c91818;
+            color: var(--accent-color);
             font-weight: normal;
             margin-left: 10px;
             display: inline-block;
         }
-        
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <img src="/public/images/black_white_on_trans.png" alt="usama Ai">
-            <h1>Medical Assistant <span>developed by usama hsnn</span></h1>
+            <img src="/public/images/black_white_on_trans.png" alt="MediMap AI">
+            <h1>Medical Assistant <span>powered by MediMap AI</span></h1>
         </div>
         <div id="chat-box" class="chat-box">
-            <div class="bot-message">Hello! I'm your medical Assistant created by usama hsnn. i can analyze laboratory reports ,x-rays etc and provide you with the best possible advice. How can I help you today?</div>
+            <div class="message-container bot">
+                <div class="bot-message">
+                    <div class="formatted-response">
+                        <h2>Welcome to MediMap AI Assistant</h2>
+                        <p>I can help you with:</p>
+                        <ul>
+                            <li>Analyzing laboratory reports</li>
+                            <li>Understanding X-rays and medical images</li>
+                            <li>Providing information about health conditions</li>
+                            <li>Answering medical questions</li>
+                        </ul>
+                        <p>How can I assist you today?</p>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="input-container">
             <div class="file-upload">
                 <input type="file" id="file-input" accept="image/*" hidden>
-                <button class="action-button" onclick="document.getElementById('file-input').click()">
+                <button class="action-button" onclick="document.getElementById('file-input').click()" title="Attach an image">
                     <i class="fas fa-paperclip"></i>
                 </button>
             </div>
             <input type="text" id="user-input" placeholder="Type your medical question here...">
-            <button class="action-button" id="send-button">
+            <button class="action-button" id="send-button" title="Send message">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
     </div>
-    <script src="medicalchatbot.js"></script>
+    <script src="/medicalchatbot.js"></script>
 </body>
 </html>
