@@ -6,7 +6,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         html, body { height: 100%; margin: 0; padding: 0; }
-        body { min-height: 100vh; background: linear-gradient(120deg, #e3f0ff 0%, #f9f9f9 100%); font-family: 'Segoe UI', Arial, sans-serif; }
+        body { 
+            min-height: 100vh; 
+            background: linear-gradient(120deg, #e3f0ff 0%, #f9f9f9 100%); 
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+        }
+        * { box-sizing: border-box; /* Apply box-sizing to all elements */ }
         .vault-outer {
             min-height: 100vh;
             width: 100vw;
@@ -26,6 +32,9 @@
             flex-wrap: wrap;
             padding: 40px 0 0 0;
             width: 90%;
+            max-width: 1200px;
+            position: relative;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         }
         .vault-btn {
             background: #f7f7f7;
@@ -120,26 +129,83 @@
             width: 100%;
             box-sizing: border-box;
             transition: box-shadow 0.2s, border-color 0.2s;
+            position: relative; /* For better responsive control */
+            flex-wrap: nowrap; /* Prevent wrapping by default */
+            gap: 10px; /* Add some spacing between elements */
         }
         .file-card:hover {
             box-shadow: 0 4px 16px #1976d233;
             border-color: #1976d2;
         }
         .file-preview {
-            width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-right: 18px;
+            width: 48px; 
+            height: 48px; 
+            min-width: 48px; /* Prevent shrinking on small screens */
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-right: 18px;
         }
-        .file-preview img { max-width: 44px; max-height: 44px; border-radius: 6px; }
+        .file-preview img { 
+            max-width: 44px; 
+            max-height: 44px; 
+            border-radius: 6px; 
+            object-fit: cover; /* Maintain aspect ratio */
+        }
         .file-preview .fa-file { font-size: 36px; color: #b0b8c1; }
-        .file-info { flex: 1; min-width: 0; }
-        .file-name { font-weight: 500; color: #222; word-break: break-all; }
-        .file-meta { font-size: 12px; color: #888; }
-        .file-actions { display: flex; align-items: center; gap: 8px; }
+        .file-info { 
+            flex: 1; 
+            min-width: 0; /* Allow text truncation */
+            overflow: hidden; /* Prevent overflow */
+        }
+        .file-name { 
+            font-weight: 500; 
+            color: #222; 
+            word-break: break-word; /* Better than break-all for readability */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Add ellipsis for long names */
+            max-width: 100%;
+        }
+        .file-meta { 
+            font-size: 12px; 
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-actions { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            flex-wrap: wrap; /* Allow wrapping on very small screens */
+            justify-content: flex-end;
+        }
         .file-actions button { background: none; border: none; color: #1976d2; font-size: 17px; margin-left: 0; cursor: pointer; transition: color 0.18s; }
         .file-actions button:hover { color: #c00; }
         .locked { margin-left: 8px; color: #c00; }
         .empty-state { text-align: center; color: #aaa; margin: 40px 0; }
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 22px; margin: 18px 0 0 0; }
-        .category-card { background: #f7fafd; border-radius: 10px; box-shadow: 0 1px 6px #0001; padding: 22px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; position: relative; }
+        .category-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 22px; 
+            margin: 18px 0 0 0;
+            width: 100%; /* Ensure full width */
+        }
+        .category-card { 
+            background: #f7fafd; 
+            border-radius: 10px; 
+            box-shadow: 0 1px 6px #0001; 
+            padding: 22px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 14px; 
+            cursor: pointer; 
+            border: 2px solid transparent; 
+            transition: 0.2s; 
+            position: relative;
+            overflow: hidden; /* Ensure content doesn't overflow */
+        }
         .category-card.selected, .category-card:hover { border-color: #1976d2; background: #fff; }
         .category-icon { width: 38px; height: 38px; border-radius: 50%; background: #eaf2ff; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #1976d2; }
         .category-info { flex: 1; }
@@ -154,20 +220,201 @@
         .lock-row input[type=password] { border: 1px solid #b0b8c1; border-radius: 5px; padding: 4px 8px; font-size: 15px; }
         .lock-row button { background: #1976d2; color: #fff; border: none; border-radius: 5px; padding: 5px 14px; font-size: 14px; cursor: pointer; margin-left: 6px; }
         .lock-row .remove-lock { background: #c00; }
-        .notif { position: fixed; bottom: 24px; right: 24px; background: #1976d2; color: #fff; padding: 14px 28px; border-radius: 8px; font-size: 16px; box-shadow: 0 2px 12px #0002; z-index: 9999; opacity: 0.97; }
+        .notif { 
+            position: fixed; 
+            bottom: 24px; 
+            right: 24px; 
+            background: #1976d2; 
+            color: #fff; 
+            padding: 14px 28px; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            box-shadow: 0 2px 12px #0002; 
+            z-index: 9999; 
+            opacity: 0.97;
+            max-width: calc(100% - 48px); /* Ensure it doesn't overflow screen */
+            word-break: break-word; /* Allow word breaking for long messages */
+        }
+        
+        @media (max-width: 480px) {
+            .notif {
+                bottom: 16px;
+                right: 16px;
+                padding: 12px 20px;
+                font-size: 14px;
+                max-width: calc(100% - 32px);
+            }
+        }
         /* Password Modal Styling */
-        .modal-bg { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: #0007; z-index: 1000; align-items: center; justify-content: center; }
-        .modal-bg.active { display: flex; }
-        .modal { background: #fff; border-radius: 14px; padding: 32px 28px 24px 28px; min-width: 320px; box-shadow: 0 4px 32px #0003; position: relative; }
+        .modal-bg { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: #0007; 
+            z-index: 1000; 
+            align-items: center; 
+            justify-content: center;
+            padding: 15px; /* Add padding for small screens */
+            overflow-y: auto; /* Allow scrolling on small screens */
+        }
+        .modal-bg.active { 
+            display: flex; 
+        }
+        .modal { 
+            background: #fff; 
+            border-radius: 14px; 
+            padding: 32px 28px 24px 28px; 
+            min-width: 320px; 
+            width: 100%; /* Responsive width */
+            max-width: 500px; /* Maximum width */
+            max-height: 90vh; /* Maximum height */
+            overflow-y: auto; /* Allow scrolling if needed */
+            box-shadow: 0 4px 32px #0003; 
+            position: relative;
+            margin: auto; /* Center on all screen sizes */
+        }
         .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 22px; color: #888; cursor: pointer; transition: color 0.2s; }
         .modal-close:hover { color: #c00; }
-        .modal label { font-size: 17px; color: #222; font-weight: 500; display: block; margin-bottom: 10px; }
-        .modal input[type=password] { width: 100%; padding: 10px; margin-bottom: 18px; border-radius: 6px; border: 1.5px solid #b0b8c1; font-size: 16px; }
-        .modal-btn-row { display: flex; justify-content: flex-end; gap: 12px; }
+        .modal label { 
+            font-size: 17px; 
+            color: #222; 
+            font-weight: 500; 
+            display: block; 
+            margin-bottom: 10px;
+        }
+        .modal input[type=password] { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 18px; 
+            border-radius: 6px; 
+            border: 1.5px solid #b0b8c1; 
+            font-size: 16px;
+            box-sizing: border-box; /* Ensure padding doesn't affect width */
+        }
+        .modal-btn-row { 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 12px;
+            flex-wrap: wrap; /* Allow buttons to wrap on small screens */
+        }
+        @media (max-width: 480px) {
+            .modal-btn-row {
+                justify-content: stretch;
+            }
+            .modal-btn-row button {
+                flex: 1;
+                padding: 12px 15px;
+                min-width: 0;
+            }
+        }
         .modal button { background: #1976d2; color: #fff; border: none; border-radius: 7px; padding: 9px 22px; font-size: 16px; cursor: pointer; font-weight: 500; }
         .modal .cancel { background: #aaa; }
-        @media (max-width: 900px) { .vault-panel, .vault-toolbar { width: 98vw; } }
-        @media (max-width: 700px) { .vault-outer { padding: 0; } .vault-toolbar { flex-direction: column; gap: 14px; } .vault-panel { padding: 10px 2vw; } .modal { min-width: 90vw; } }
+        /* Enhanced responsiveness */
+        @media (max-width: 1200px) {
+            .vault-panel, .vault-toolbar { width: 95vw; }
+            .category-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+        }
+        
+        @media (max-width: 900px) {
+            .vault-panel, .vault-toolbar { width: 98vw; }
+            .category-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+            .vault-btn { padding: 12px 20px; font-size: 16px; }
+            .vault-btn i { font-size: 18px; }
+        }
+        
+        @media (max-width: 768px) {
+            .vault-toolbar { flex-wrap: nowrap; overflow-x: auto; padding: 30px 0 0 0; justify-content: flex-start; }
+            .vault-btn { flex: 0 0 auto; white-space: nowrap; }
+            .vault-panel { border-radius: 12px; }
+            .file-card { flex-wrap: wrap; padding: 12px; }
+            .file-preview { margin-right: 12px; }
+            .file-actions { width: 100%; justify-content: flex-end; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+            .modal { padding: 25px 20px 20px 20px; }
+        }
+        
+        @media (max-width: 700px) {
+            .vault-outer { padding: 0; }
+            .vault-toolbar { flex-direction: row; gap: 10px; padding: 20px 0 0 0; }
+            .vault-panel { padding: 16px 12px; margin-bottom: 16px; }
+            .modal { min-width: 90vw; max-width: 95vw; }
+            .search-sort-bar { flex-direction: column; gap: 12px; }
+            .search-input, .sort-dropdown { width: 100%; box-sizing: border-box; }
+            .upload-area { padding: 25px 10px; }
+        }
+        
+        @media (max-width: 480px) {
+            .vault-toolbar { padding: 15px 0 0 0; gap: 8px; }
+            .vault-btn { padding: 8px 12px; font-size: 0; border-radius: 50px; width: 40px; height: 40px; justify-content: center; }
+            .vault-btn i { font-size: 16px; margin: 0; }
+            .file-card { padding: 10px; }
+            .file-preview { width: 40px; height: 40px; min-width: 40px; margin-right: 10px; }
+            .file-name { font-size: 14px; }
+            .file-meta { font-size: 11px; }
+            .file-actions button { font-size: 15px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #f5f8fa; border-radius: 50%; margin: 0 2px; }
+            .upload-btn { width: 100%; }
+            .category-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .category-card { padding: 12px 10px; }
+            .category-icon { width: 32px; height: 32px; min-width: 32px; font-size: 16px; }
+            .category-name { font-size: 14px; }
+            .lock-row { flex-wrap: wrap; }
+            .lock-row input[type=password] { width: 100%; margin: 5px 0; }
+            .lock-row button { margin: 5px 5px 5px 0; }
+        }
+        /* Share Modal Styling */
+        .share-options { margin: 18px 0; }
+        .share-row { display: flex; align-items: center; margin-bottom: 12px; }
+        .share-row label { min-width: 140px; }
+        .share-row select, .share-row input { 
+            flex: 1; 
+            padding: 8px; 
+            border-radius: 6px; 
+            border: 1.5px solid #b0b8c1; 
+        }
+        .share-link-result {
+            margin: 18px 0;
+            padding: 12px;
+            background: #f5f8fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            word-break: break-all;
+        }
+        .share-history {
+            margin-top: 24px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        .share-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            margin-bottom: 8px;
+            border-radius: 6px;
+        }
+        .share-item-info {
+            flex: 1;
+        }
+        .share-item-actions button {
+            padding: 5px 12px;
+            margin-left: 8px;
+            font-size: 14px;
+        }
+        .share-item-expires {
+            color: #c00;
+            font-size: 13px;
+        }
+        .active-share {
+            color: #388e3c;
+            font-weight: 500;
+        }
+        .expired-share {
+            color: #888;
+            text-decoration: line-through;
+        }
     </style>
 </head>
 <body>
@@ -280,6 +527,67 @@
         </div>
     </div>
 </div>
+<!-- Share Modal -->
+<div class="modal-bg" id="shareModal">
+    <div class="modal">
+        <button class="modal-close" id="shareModalClose" title="Close">&times;</button>
+        <h3>Share File</h3>
+        <div id="shareFileName" style="color:#555;margin-bottom:15px;font-style:italic;"></div>
+        
+        <div class="share-options">
+            <div class="share-row">
+                <label for="shareExpiry">Expires after:</label>
+                <select id="shareExpiry">
+                    <option value="1">1 day</option>
+                    <option value="7" selected>7 days</option>
+                    <option value="30">30 days</option>
+                    <option value="90">90 days</option>
+                    <option value="0">Never</option>
+                </select>
+            </div>
+            <div class="share-row">
+                <label for="sharePassword">Password protect:</label>
+                <input type="password" id="sharePassword" placeholder="Optional password">
+            </div>
+        </div>
+        
+        <button class="upload-btn" style="width:100%" id="generateShareLink">
+            <i class="fas fa-link"></i> Generate Share Link
+        </button>
+        
+        <div class="share-link-result" id="shareLinkResult" style="display:none;"></div>
+        
+        <div class="modal-btn-row">
+            <button class="cancel" id="shareModalCancel">Close</button>
+            <button id="copyShareLinkBtn" style="display:none">Copy Link</button>
+        </div>
+        
+        <div class="share-history" id="shareHistory" style="display:none;">
+            <h4>Active Shares</h4>
+            <div id="activeSharesList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Access Modal -->
+<div class="modal-bg" id="shareAccessModal">
+    <div class="modal">
+        <button class="modal-close" id="shareAccessModalClose" title="Close">&times;</button>
+        <h3>Access Shared File</h3>
+        <div id="sharedFileInfo" style="margin:12px 0;"></div>
+        
+        <div id="sharePasswordPrompt" style="margin:20px 0;display:none;">
+            <label for="accessSharePassword">This file is password protected:</label>
+            <input type="password" id="accessSharePassword" placeholder="Enter password to access" style="width:100%;padding:10px;margin-top:8px;border-radius:6px;border:1.5px solid #b0b8c1;">
+        </div>
+        
+        <div class="modal-btn-row">
+            <button class="cancel" id="shareAccessCancel">Cancel</button>
+            <button id="shareAccessConfirm">Access File</button>
+        </div>
+    </div>
+</div>
+
 <div id="notif" class="notif" style="display:none;"></div>
 <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
 <script>
@@ -299,13 +607,25 @@ let currentCategory = null;
 let categoryFileType = 'all';
 let allFilesType = 'all';
 let selectedFiles = new Set();
+let pendingShareFile = null;
 
 // IndexedDB setup
 async function initDB() {
-    db = await idb.openDB('report-vault', 1, {
-        upgrade(db) {
-            if (!db.objectStoreNames.contains('files')) {
-                db.createObjectStore('files', { keyPath: 'id', autoIncrement: true });
+    db = await idb.openDB('report-vault', 2, {
+        upgrade(db, oldVersion, newVersion) {
+            if (oldVersion < 1) {
+                if (!db.objectStoreNames.contains('files')) {
+                    db.createObjectStore('files', { keyPath: 'id', autoIncrement: true });
+                }
+            }
+            
+            // Add shares store in version 2
+            if (oldVersion < 2) {
+                if (!db.objectStoreNames.contains('shares')) {
+                    const shareStore = db.createObjectStore('shares', { keyPath: 'shareId' });
+                    shareStore.createIndex('fileId', 'fileId');
+                    shareStore.createIndex('expiresAt', 'expiresAt');
+                }
             }
         }
     });
@@ -498,6 +818,7 @@ function renderFileList(files, list) {
             <div class="file-actions">
                 <button title="View" onclick="viewFile(${file.id})"><i class="fas fa-eye"></i></button>
                 <button title="Download" onclick="downloadFile(${file.id})"><i class="fas fa-download"></i></button>
+                <button title="Share" onclick="showShareModal(${file.id})"><i class="fas fa-share-alt"></i></button>
                 <button title="Rename" onclick="renameFile(${file.id})"><i class="fas fa-edit"></i></button>
                 <button title="Assign Category" onclick="showCategoryModal(${file.id})"><i class="fas fa-folder"></i></button>
                 <button title="Delete" onclick="deleteFile(${file.id})"><i class="fas fa-trash"></i></button>
@@ -574,9 +895,9 @@ function renderCategoryFileList(files, list) {
             <div class="file-actions">
                 <button title="View" onclick="viewFile(${file.id})"><i class="fas fa-eye"></i></button>
                 <button title="Download" onclick="downloadFile(${file.id})"><i class="fas fa-download"></i></button>
+                <button title="Share" onclick="showShareModal(${file.id})"><i class="fas fa-share-alt"></i></button>
                 <button title="Rename" onclick="renameFile(${file.id})"><i class="fas fa-edit"></i></button>
                 <button title="${file.password ? 'Unlock' : 'Lock'}" onclick="toggleLockFile(${file.id})"><i class="fas ${file.password ? 'fa-unlock' : 'fa-lock'}"></i></button>
-                <button title="Copy Link" onclick="copyFileLink(${file.id})"><i class="fas fa-link"></i></button>
                 <button title="Delete" onclick="deleteFile(${file.id})"><i class="fas fa-trash"></i></button>
             </div>`;
         list.appendChild(card);
@@ -887,6 +1208,7 @@ async function renderAllFiles() {
             <div class="file-actions">
                 <button title="View" onclick="viewFile(${file.id})"><i class="fas fa-eye"></i></button>
                 <button title="Download" onclick="downloadFile(${file.id})"><i class="fas fa-download"></i></button>
+                <button title="Share" onclick="showShareModal(${file.id})"><i class="fas fa-share-alt"></i></button>
                 <button title="Rename" onclick="renameFile(${file.id})"><i class="fas fa-edit"></i></button>
                 <button title="Delete" onclick="deleteFile(${file.id})"><i class="fas fa-trash"></i></button>
             </div>
@@ -1106,6 +1428,274 @@ document.getElementById('catUploadCancel').onclick = function() {
     document.getElementById('categoryUploadModal').classList.remove('active');
 };
 
+// --- SHARE FEATURE ---
+window.showShareModal = async function(fileId) {
+    // Get file details
+    const file = await db.get('files', fileId);
+    if (!file) {
+        showNotif('File not found', 'error');
+        return;
+    }
+    
+    pendingShareFile = file;
+    
+    // Reset share form
+    document.getElementById('shareExpiry').value = '7';
+    document.getElementById('sharePassword').value = '';
+    document.getElementById('shareLinkResult').style.display = 'none';
+    document.getElementById('copyShareLinkBtn').style.display = 'none';
+    
+    // Display file name
+    document.getElementById('shareFileName').textContent = file.name;
+    
+    // Check for existing shares
+    const tx = db.transaction('shares', 'readonly');
+    const shareStore = tx.objectStore('shares');
+    const fileShares = await shareStore.index('fileId').getAll(fileId);
+    
+    const activeShares = fileShares.filter(share => {
+        return share.expiresAt === 0 || new Date(share.expiresAt) > new Date();
+    });
+    
+    // Display active shares if any
+    const shareHistorySection = document.getElementById('shareHistory');
+    const activeSharesList = document.getElementById('activeSharesList');
+    
+    if (activeShares.length > 0) {
+        shareHistorySection.style.display = 'block';
+        activeSharesList.innerHTML = '';
+        
+        activeShares.forEach(share => {
+            const shareItem = document.createElement('div');
+            shareItem.className = 'share-item';
+            
+            const expiryText = share.expiresAt === 0 
+                ? 'Never expires' 
+                : `Expires on ${new Date(share.expiresAt).toLocaleDateString()}`;
+                
+            shareItem.innerHTML = `
+                <div class="share-item-info">
+                    <div class="active-share">
+                        <i class="fas fa-link"></i> Active share
+                        ${share.password ? ' <i class="fas fa-lock" title="Password protected"></i>' : ''}
+                    </div>
+                    <div class="share-item-expires">${expiryText}</div>
+                    <div style="font-size:13px;color:#555;margin-top:4px">
+                        Created on ${new Date(share.createdAt).toLocaleDateString()}
+                    </div>
+                </div>
+                <div class="share-item-actions">
+                    <button onclick="copyShareLinkById('${share.shareId}')">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button style="background:#c00" onclick="revokeShare('${share.shareId}')">
+                        <i class="fas fa-trash"></i> Revoke
+                    </button>
+                </div>
+            `;
+            
+            activeSharesList.appendChild(shareItem);
+        });
+    } else {
+        shareHistorySection.style.display = 'none';
+    }
+    
+    // Show modal
+    document.getElementById('shareModal').classList.add('active');
+};
+
+// Generate share link
+document.getElementById('generateShareLink').onclick = async function() {
+    if (!pendingShareFile) return;
+    
+    const expiryDays = parseInt(document.getElementById('shareExpiry').value);
+    const sharePassword = document.getElementById('sharePassword').value;
+    
+    // Calculate expiry date
+    const expiresAt = expiryDays === 0 ? 0 : Date.now() + (expiryDays * 24 * 60 * 60 * 1000);
+    
+    // Generate share ID - use a secure random ID
+    const shareId = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+        
+    // Create share object
+    const shareObj = {
+        shareId,
+        fileId: pendingShareFile.id,
+        fileName: pendingShareFile.name,
+        fileType: pendingShareFile.type,
+        createdAt: Date.now(),
+        expiresAt,
+        password: sharePassword || null,
+        accessCount: 0
+    };
+    
+    // Store in database
+    await db.add('shares', shareObj);
+    
+    // Generate full share link
+    const shareLink = `${location.origin}${location.pathname}#share-${shareId}`;
+    
+    // Display link
+    const shareLinkResult = document.getElementById('shareLinkResult');
+    shareLinkResult.textContent = shareLink;
+    shareLinkResult.style.display = 'block';
+    
+    // Show copy button
+    document.getElementById('copyShareLinkBtn').style.display = 'inline-block';
+    
+    // Update active shares list
+    await showShareModal(pendingShareFile.id);
+    
+    showNotif('Share link generated successfully');
+};
+
+// Copy share link
+document.getElementById('copyShareLinkBtn').onclick = async function() {
+    const linkText = document.getElementById('shareLinkResult').textContent;
+    try {
+        await navigator.clipboard.writeText(linkText);
+        showNotif('Share link copied to clipboard');
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        showNotif('Failed to copy to clipboard', 'error');
+    }
+};
+
+// Copy share link by ID
+window.copyShareLinkById = async function(shareId) {
+    const shareLink = `${location.origin}${location.pathname}#share-${shareId}`;
+    try {
+        await navigator.clipboard.writeText(shareLink);
+        showNotif('Share link copied to clipboard');
+    } catch (err) {
+        showNotif('Failed to copy to clipboard', 'error');
+    }
+};
+
+// Revoke share
+window.revokeShare = async function(shareId) {
+    if (!confirm('Are you sure you want to revoke this share link? It will no longer be accessible.')) {
+        return;
+    }
+    
+    await db.delete('shares', shareId);
+    if (pendingShareFile) {
+        await showShareModal(pendingShareFile.id);
+    }
+    showNotif('Share link has been revoked');
+};
+
+// Close share modal
+document.getElementById('shareModalClose').onclick = function() {
+    pendingShareFile = null;
+    document.getElementById('shareModal').classList.remove('active');
+};
+document.getElementById('shareModalCancel').onclick = function() {
+    pendingShareFile = null;
+    document.getElementById('shareModal').classList.remove('active');
+};
+
+// --- SHARE ACCESS HANDLING ---
+let pendingShareAccess = null;
+
+// Process hash for shares
+async function checkUrlForShare() {
+    if (location.hash && location.hash.startsWith('#share-')) {
+        const shareId = location.hash.replace('#share-', '');
+        
+        try {
+            const share = await db.get('shares', shareId);
+            
+            if (!share) {
+                showNotif('This share link is invalid or has been revoked', 'error');
+                return;
+            }
+            
+            // Check if expired
+            if (share.expiresAt !== 0 && new Date(share.expiresAt) < new Date()) {
+                showNotif('This share link has expired', 'error');
+                return;
+            }
+            
+            pendingShareAccess = share;
+            
+            // Show access modal
+            const fileInfo = document.getElementById('sharedFileInfo');
+            fileInfo.innerHTML = `<strong>${share.fileName}</strong><br>
+                <span style="color:#555">Shared file (${share.fileType.split('/')[1] || share.fileType})</span>`;
+            
+            // Show password prompt if needed
+            const passwordPrompt = document.getElementById('sharePasswordPrompt');
+            if (share.password) {
+                passwordPrompt.style.display = 'block';
+                document.getElementById('accessSharePassword').value = '';
+            } else {
+                passwordPrompt.style.display = 'none';
+            }
+            
+            document.getElementById('shareAccessModal').classList.add('active');
+            
+        } catch (err) {
+            console.error('Error processing share:', err);
+            showNotif('Error processing share link', 'error');
+        }
+    }
+}
+
+// Access shared file
+document.getElementById('shareAccessConfirm').onclick = async function() {
+    if (!pendingShareAccess) return;
+    
+    // Check password if needed
+    if (pendingShareAccess.password) {
+        const enteredPassword = document.getElementById('accessSharePassword').value;
+        if (enteredPassword !== pendingShareAccess.password) {
+            showNotif('Incorrect password', 'error');
+            return;
+        }
+    }
+    
+    try {
+        // Get the file
+        const file = await db.get('files', pendingShareAccess.fileId);
+        if (!file) {
+            showNotif('The shared file is no longer available', 'error');
+            document.getElementById('shareAccessModal').classList.remove('active');
+            return;
+        }
+        
+        // Update access count
+        pendingShareAccess.accessCount += 1;
+        pendingShareAccess.lastAccessed = Date.now();
+        await db.put('shares', pendingShareAccess);
+        
+        // Close modal
+        document.getElementById('shareAccessModal').classList.remove('active');
+        
+        // Open file
+        const a = document.createElement('a');
+        a.href = file.data;
+        a.target = '_blank';
+        a.click();
+        
+    } catch (err) {
+        console.error('Error accessing shared file:', err);
+        showNotif('Error accessing the shared file', 'error');
+    }
+};
+
+// Close share access modal
+document.getElementById('shareAccessModalClose').onclick = function() {
+    pendingShareAccess = null;
+    document.getElementById('shareAccessModal').classList.remove('active');
+};
+document.getElementById('shareAccessCancel').onclick = function() {
+    pendingShareAccess = null;
+    document.getElementById('shareAccessModal').classList.remove('active');
+};
+
 // -- APP INITIALIZATION --
 window.addEventListener('DOMContentLoaded', async function() {
     try {
@@ -1114,13 +1704,30 @@ window.addEventListener('DOMContentLoaded', async function() {
         setupUploadImages();
         renderDocsFiles();
         checkUrlForFile();
+        checkUrlForShare(); // Check for share links
         
-        // Add event listener for hash changes (for file links)
-        window.addEventListener('hashchange', checkUrlForFile);
+        // Add event listener for hash changes (for file links and share links)
+        window.addEventListener('hashchange', function() {
+            checkUrlForFile();
+            checkUrlForShare();
+        });
         
         // Add search listeners
         document.getElementById('allFilesSearch').addEventListener('input', renderAllFiles);
         document.getElementById('allFilesSort').addEventListener('change', renderAllFiles);
+        
+        // Periodically clean expired shares
+        setInterval(async function() {
+            const tx = db.transaction('shares', 'readwrite');
+            const shareStore = tx.objectStore('shares');
+            const expiredShares = await shareStore.index('expiresAt').getAll(IDBKeyRange.upperBound(Date.now()));
+            
+            for (const share of expiredShares) {
+                if (share.expiresAt !== 0) { // Skip never-expiring links
+                    await shareStore.delete(share.shareId);
+                }
+            }
+        }, 60 * 60 * 1000); // Check once per hour
         
     } catch (err) {
         console.error('Failed to initialize Report Vault:', err);
