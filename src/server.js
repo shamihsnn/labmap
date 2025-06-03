@@ -12,6 +12,7 @@ import multer from 'multer';
 import compression from 'compression';
 import nodemailer from 'nodemailer';
 import cookieParser from 'cookie-parser';
+import { networkInterfaces } from 'os';
 
 // Log environment details
 console.log('Current working directory:', process.cwd());
@@ -38,12 +39,20 @@ const ADMIN_PASSWORD = "admin123";
 app.use(express.json({limit: '100mb'}));
 app.use(express.urlencoded({limit: '100mb', extended: true, parameterLimit: 50000}));
 app.use(compression());
-app.use(express.static('public'));
-app.use(express.static('views'));
-app.use('/video', express.static('video'));
+app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../views')));
+app.use('/video', express.static(path.join(__dirname, '../video')));
 app.use('/public', express.static(path.join(__dirname, '../public')));
 app.use('/images', express.static(path.join(__dirname, '../images')));
 app.use(cookieParser());
+
+// Add CORS headers to allow network access
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    next();
+});
 
 // Admin authentication middleware
 function authenticateAdmin(req, res, next) {
@@ -715,6 +724,10 @@ app.get('/report-vault', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/report-vault.html'));
 });
 
+app.get('/price-comparison', (req, res) => {
+    res.sendFile(path.join(__dirname, '../views/price-comparison.html'));
+});
+
 app.get('/forums', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/forums.html'));
 });
@@ -723,11 +736,56 @@ app.get('/forum', (req, res) => {
     res.redirect('/forums');
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
+
+function getNetworkAddresses() {
+    const nets = networkInterfaces();
+    const addresses = [];
+    
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+            // Include both IPv4 and IPv6 addresses
+            if (!net.internal) {
+                addresses.push(net.address);
+            }
+        }
+    }
+    return addresses;
+}
+
+// Add error handling for the server
+const server = app.listen(PORT, HOST, () => {
+    const networkAddresses = getNetworkAddresses();
+    console.log('\n=== Server Status ===');
+    console.log(`Server running on:`);
+    console.log(`- Local: http://localhost:${PORT}`);
+    console.log(`- Local IP: http://127.0.0.1:${PORT}`);
+    networkAddresses.forEach(addr => {
+        console.log(`- Network: http://${addr}:${PORT}`);
+    });
+    console.log('\nTo access from other devices on your network, use one of the Network URLs above.');
+    console.log('===================\n');
 });
 
+// Handle server errors
+server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Please try a different port or close the application using this port.`);
+    } else {
+        console.error('Server error:', error);
+    }
+    process.exit(1);
+});
+
+// Handle process termination
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        console.log('HTTP server closed');
+        process.exit(0);
+    });
+});
 
 app.get('/ambulance-loader.svg', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/ambulance-loader.svg'));

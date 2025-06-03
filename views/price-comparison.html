@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Test Price Comparison - Lab Finder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/public/styles.css">
+    <style>
+        .price-comparison-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .search-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .test-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .test-search input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .test-search button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .test-search button:hover {
+            background: #0056b3;
+        }
+
+        .popular-tests {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .popular-test-tag {
+            padding: 5px 15px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .popular-test-tag:hover {
+            background: #e0e0e0;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .price {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .best-price {
+            color: #28a745;
+            font-weight: 700;
+        }
+
+        .lab-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lab-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .location-badge {
+            font-size: 12px;
+            padding: 2px 8px;
+            background: #e9ecef;
+            border-radius: 12px;
+            color: #666;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .sort-options {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .sort-btn {
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sort-btn:hover {
+            background: #e9ecef;
+        }
+
+        .sort-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        @media (max-width: 768px) {
+            .price-comparison-container {
+                padding: 10px;
+            }
+
+            .test-search {
+                flex-direction: column;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sort-options {
+                margin-left: 0;
+                justify-content: space-between;
+            }
+
+            .comparison-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Lab Finder</h2>
+            <button class="close-sidebar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-menu">
+                <ul>
+                    <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="/semantic-scholar"><i class="fas fa-search"></i> Medical Search</a></li>
+                    <li><a href="/symptoms"><i class="fas fa-notes-medical"></i> Symptoms Checker</a></li>
+                    <li><a href="/report-vault"><i class="fas fa-file-medical"></i> Report Vault</a></li>
+                    <li><a href="/forums"><i class="fas fa-comments"></i> Forums</a></li>
+                    <li><a href="/medicalchatbot"><i class="fas fa-robot"></i> Medical Chatbot</a></li>
+                    <li><a href="/price-comparison" class="active"><i class="fas fa-tags"></i> Price Comparison</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="hamburger-menu">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <div class="price-comparison-container">
+        <div class="search-section">
+            <h2>Compare Lab Test Prices</h2>
+            <div class="test-search">
+                <input type="text" id="testSearch" placeholder="Search for a test (e.g., CBC, Lipid Profile, etc.)">
+                <button onclick="searchTests()"><i class="fas fa-search"></i> Search</button>
+            </div>
+            <div class="popular-tests">
+                <span class="popular-test-tag" onclick="searchTest('CBC')">CBC</span>
+                <span class="popular-test-tag" onclick="searchTest('Lipid Profile')">Lipid Profile</span>
+                <span class="popular-test-tag" onclick="searchTest('Blood Glucose')">Blood Glucose</span>
+                <span class="popular-test-tag" onclick="searchTest('Liver Function')">Liver Function</span>
+                <span class="popular-test-tag" onclick="searchTest('Kidney Function')">Kidney Function</span>
+                <span class="popular-test-tag" onclick="searchTest('Thyroid Profile')">Thyroid Profile</span>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>City:</label>
+                <select id="cityFilter" onchange="filterResults()">
+                    <option value="all">All Cities</option>
+                    <option value="Islamabad">Islamabad</option>
+                    <option value="Rawalpindi">Rawalpindi</option>
+                    <option value="Lahore">Lahore</option>
+                    <option value="Karachi">Karachi</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Price Range:</label>
+                <select id="priceFilter" onchange="filterResults()">
+                    <option value="all">All Prices</option>
+                    <option value="0-1000">Under Rs. 1,000</option>
+                    <option value="1000-2000">Rs. 1,000 - 2,000</option>
+                    <option value="2000-5000">Rs. 2,000 - 5,000</option>
+                    <option value="5000+">Above Rs. 5,000</option>
+                </select>
+            </div>
+            <div class="sort-options">
+                <button class="sort-btn active" onclick="sortByPrice('asc')">Price: Low to High</button>
+                <button class="sort-btn" onclick="sortByPrice('desc')">Price: High to Low</button>
+            </div>
+        </div>
+
+        <div class="comparison-results">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Lab</th>
+                        <th>Location</th>
+                        <th>Price (PKR)</th>
+                        <th>Turnaround Time</th>
+                        <th>Home Collection</th>
+                    </tr>
+                </thead>
+                <tbody id="comparisonTableBody">
+                    <!-- Table content will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Dummy data for lab test prices
+        const labTests = [
+            {
+                name: "Complete Blood Count (CBC)",
+                labs: [
+                    {
+                        name: "Chughtai Lab",
+                        logo: "https://chughtailab.com/assets/images/logo.png",
+                        location: "Islamabad",
+                        price: 1200,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Excel Lab",
+                        logo: "https://excellab.com.pk/assets/images/logo.png",
+                        location: "Rawalpindi",
+                        price: 1100,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Shaukat Khanum",
+                        logo: "https://shaukatkhanum.org.pk/assets/images/logo.png",
+                        location: "Lahore",
+                        price: 1500,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    }
+                ]
+            },
+            {
+                name: "Lipid Profile",
+                labs: [
+                    {
+                        name: "Chughtai Lab",
+                        logo: "https://chughtailab.com/assets/images/logo.png",
+                        location: "Islamabad",
+                        price: 2500,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Excel Lab",
+                        logo: "https://excellab.com.pk/assets/images/logo.png",
+                        location: "Rawalpindi",
+                        price: 2200,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Shaukat Khanum",
+                        logo: "https://shaukatkhanum.org.pk/assets/images/logo.png",
+                        location: "Lahore",
+                        price: 2800,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    }
+                ]
+            },
+            {
+                name: "Blood Glucose (Fasting)",
+                labs: [
+                    {
+                        name: "Chughtai Lab",
+                        logo: "https://chughtailab.com/assets/images/logo.png",
+                        location: "Islamabad",
+                        price: 800,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Excel Lab",
+                        logo: "https://excellab.com.pk/assets/images/logo.png",
+                        location: "Rawalpindi",
+                        price: 750,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Shaukat Khanum",
+                        logo: "https://shaukatkhanum.org.pk/assets/images/logo.png",
+                        location: "Lahore",
+                        price: 900,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    }
+                ]
+            },
+            {
+                name: "Liver Function Test (LFT)",
+                labs: [
+                    {
+                        name: "Chughtai Lab",
+                        logo: "https://chughtailab.com/assets/images/logo.png",
+                        location: "Islamabad",
+                        price: 1800,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Excel Lab",
+                        logo: "https://excellab.com.pk/assets/images/logo.png",
+                        location: "Rawalpindi",
+                        price: 1600,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Shaukat Khanum",
+                        logo: "https://shaukatkhanum.org.pk/assets/images/logo.png",
+                        location: "Lahore",
+                        price: 2000,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    }
+                ]
+            },
+            {
+                name: "Kidney Function Test (KFT)",
+                labs: [
+                    {
+                        name: "Chughtai Lab",
+                        logo: "https://chughtailab.com/assets/images/logo.png",
+                        location: "Islamabad",
+                        price: 2000,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Excel Lab",
+                        logo: "https://excellab.com.pk/assets/images/logo.png",
+                        location: "Rawalpindi",
+                        price: 1800,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Shaukat Khanum",
+                        logo: "https://shaukatkhanum.org.pk/assets/images/logo.png",
+                        location: "Lahore",
+                        price: 2200,
+                        turnaround: "24 hours",
+                        homeCollection: true
+                    }
+                ]
+            },
+            {
+                name: "Thyroid Profile (T3, T4, TSH)",
+                labs: [
+                    {
+                        name: "Chughtai Lab",
+                        logo: "https://chughtailab.com/assets/images/logo.png",
+                        location: "Islamabad",
+                        price: 3000,
+                        turnaround: "48 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Excel Lab",
+                        logo: "https://excellab.com.pk/assets/images/logo.png",
+                        location: "Rawalpindi",
+                        price: 2800,
+                        turnaround: "48 hours",
+                        homeCollection: true
+                    },
+                    {
+                        name: "Shaukat Khanum",
+                        logo: "https://shaukatkhanum.org.pk/assets/images/logo.png",
+                        location: "Lahore",
+                        price: 3200,
+                        turnaround: "48 hours",
+                        homeCollection: true
+                    }
+                ]
+            }
+        ];
+
+        // Function to search tests
+        function searchTests() {
+            const searchTerm = document.getElementById('testSearch').value.toLowerCase();
+            const filteredTests = labTests.filter(test => 
+                test.name.toLowerCase().includes(searchTerm)
+            );
+            displayResults(filteredTests);
+        }
+
+        // Function to search by popular test tag
+        function searchTest(testName) {
+            document.getElementById('testSearch').value = testName;
+            searchTests();
+        }
+
+        // Function to filter results
+        function filterResults() {
+            const cityFilter = document.getElementById('cityFilter').value;
+            const priceFilter = document.getElementById('priceFilter').value;
+            
+            let filteredTests = [...labTests];
+            
+            if (cityFilter !== 'all') {
+                filteredTests = filteredTests.map(test => ({
+                    ...test,
+                    labs: test.labs.filter(lab => lab.location === cityFilter)
+                })).filter(test => test.labs.length > 0);
+            }
+            
+            if (priceFilter !== 'all') {
+                const [min, max] = priceFilter.split('-').map(Number);
+                filteredTests = filteredTests.map(test => ({
+                    ...test,
+                    labs: test.labs.filter(lab => {
+                        if (max) {
+                            return lab.price >= min && lab.price <= max;
+                        } else {
+                            return lab.price >= min;
+                        }
+                    })
+                })).filter(test => test.labs.length > 0);
+            }
+            
+            displayResults(filteredTests);
+        }
+
+        // Function to sort by price
+        function sortByPrice(order) {
+            const sortButtons = document.querySelectorAll('.sort-btn');
+            sortButtons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const tests = [...labTests];
+            tests.forEach(test => {
+                test.labs.sort((a, b) => {
+                    return order === 'asc' ? a.price - b.price : b.price - a.price;
+                });
+            });
+            
+            displayResults(tests);
+        }
+
+        // Function to display results
+        function displayResults(tests) {
+            const tableBody = document.getElementById('comparisonTableBody');
+            tableBody.innerHTML = '';
+            
+            tests.forEach(test => {
+                const minPrice = Math.min(...test.labs.map(lab => lab.price));
+                
+                test.labs.forEach(lab => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${test.name}</td>
+                        <td>
+                            <div class="lab-name">
+                                <img src="${lab.logo}" alt="${lab.name}" class="lab-logo" onerror="this.src='https://via.placeholder.com/30'">
+                                ${lab.name}
+                            </div>
+                        </td>
+                        <td><span class="location-badge">${lab.location}</span></td>
+                        <td class="price ${lab.price === minPrice ? 'best-price' : ''}">
+                            Rs. ${lab.price.toLocaleString()}
+                            ${lab.price === minPrice ? ' (Best Price)' : ''}
+                        </td>
+                        <td>${lab.turnaround}</td>
+                        <td>${lab.homeCollection ? '✓' : '✗'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            });
+        }
+
+        // Initialize the table with all results
+        displayResults(labTests);
+
+        // Hamburger menu functionality
+        document.querySelector('.hamburger-menu').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.add('active');
+            document.querySelector('.sidebar-overlay').classList.add('active');
+        });
+
+        document.querySelector('.close-sidebar').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.remove('active');
+            document.querySelector('.sidebar-overlay').classList.remove('active');
+        });
+    </script>
+</body>
+</html> 

@@ -19,7 +19,29 @@ const labs = [
         info: "Full service medical laboratory with state-of-the-art equipment",
         services: ["Blood Tests", "X-Ray", "MRI", "CT Scan", "Ultrasound"],
         timings: "24/7",
-        address: "gudwal morr, Wah Cantt"
+        address: "gudwal morr, Wah Cantt",
+        images: [
+            {
+                url: "/images/labs/capital-diagnostic/interior-1.jpg",
+                caption: "Modern Laboratory Interior"
+            },
+            {
+                url: "/images/labs/capital-diagnostic/interior-2.jpg",
+                caption: "Advanced Testing Equipment"
+            }
+        ],
+        certifications: [
+            {
+                name: "ISO 15189",
+                year: "2023",
+                image: "/images/certifications/iso-15189.png"
+            },
+            {
+                name: "CAP Accreditation",
+                year: "2023",
+                image: "/images/certifications/cap.png"
+            }
+        ]
     },
     {
         name: "university of haripur",
@@ -29,7 +51,9 @@ const labs = [
         info: "university ",
         services: ["education,MLT"],
         timings: "24/7",
-        address: "haripur"
+        address: "haripur",
+        images: [],
+        certifications: []
     },
     {
         name: "POF Hospital Labs",
@@ -39,7 +63,20 @@ const labs = [
         info: "Specialized diagnostic center serving POF employees and general public",
         services: ["Pathology", "Radiology", "Microbiology", "Biochemistry"],
         timings: "8:00 AM - 10:00 PM",
-        address: "POF Hospital Complex, Wah Cantt"
+        address: "POF Hospital Complex, Wah Cantt",
+        images: [
+            {
+                url: "/images/labs/pof-hospital/interior-1.jpg",
+                caption: "Laboratory Reception"
+            }
+        ],
+        certifications: [
+            {
+                name: "ISO 15189",
+                year: "2023",
+                image: "/images/certifications/iso-15189.png"
+            }
+        ]
     },
     {
         name: "IDC Labs Barrier 3",
@@ -57,7 +94,7 @@ const labs = [
         lng: 72.77567890123456,
         contact: "051-905-1234",
         info: "Modern diagnostic facility with latest equipment",
-        services: ["Clinical Laboratory", "Molecular Diagnostics", "Histopathology"],
+        services: [ "Molecular Diagnostics", "Histopathology"],
         timings: "8:00 AM - 11:00 PM",
         address: "Main GT Road, Wah Cantt"
     },
@@ -109,7 +146,7 @@ const labs = [
     lng: 72.76123456789012,
     contact: "051-4911177",
     info: "24/7 blood bank and diagnostic services",
-    services: ["Blood Bank", "Clinical Lab", "PCR Testing", "Biochemistry"],
+    services: ["Blood Bank", "PCR Testing", "Biochemistry"],
     timings: "24/7",
     address: "Block D, Commercial Area, Wah Cantt"
 },
@@ -688,6 +725,33 @@ function createLabPopupContent(lab) {
     // Create a safe ID from the lab name by removing spaces and special characters
     const safeLabName = lab.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
     
+    // Create image gallery HTML if lab has images
+    const imageGalleryHTML = lab.images && lab.images.length > 0 ? `
+        <div class="lab-gallery">
+            ${lab.images.map((img, index) => `
+                <div class="gallery-item">
+                    <img src="${img.url}" alt="${img.caption}" onclick="openImageModal('${img.url}', '${img.caption}')">
+                    <p class="image-caption">${img.caption}</p>
+                </div>
+            `).join('')}
+        </div>
+    ` : '<p class="no-images">No images available</p>';
+
+    // Create certifications HTML if lab has certifications
+    const certificationsHTML = lab.certifications && lab.certifications.length > 0 ? `
+        <div class="certifications-grid">
+            ${lab.certifications.map(cert => `
+                <div class="certification-item">
+                    <img src="${cert.image}" alt="${cert.name}" class="certification-badge">
+                    <div class="certification-info">
+                        <h4>${cert.name}</h4>
+                        <p>Accredited ${cert.year}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    ` : '<p class="no-certifications">No certifications available</p>';
+    
     return `
         <div class="lab-popup">
             <h3 class="lab-name">${lab.name}</h3>
@@ -710,35 +774,58 @@ function createLabPopupContent(lab) {
             
             <div class="simple-tabs">
                 <div class="simple-tab-buttons">
-                    <button class="simple-tab-btn active" data-tab="write-tab-${safeLabName}">Write Review</button>
+                    <button class="simple-tab-btn active" data-tab="info-tab-${safeLabName}">Info</button>
+                    <button class="simple-tab-btn" data-tab="write-tab-${safeLabName}">Write Review</button>
                     <button class="simple-tab-btn" data-tab="read-tab-${safeLabName}">Read Reviews</button>
+                    <button class="simple-tab-btn" data-tab="gallery-tab-${safeLabName}">Gallery</button>
                 </div>
                 
-                <div class="simple-tab-content">
-                    <div id="write-tab-${safeLabName}" class="simple-tab-pane active">
-                        <select class="rating-input" aria-label="Select rating">
-                            <option value="">Select rating</option>
-                            <option value="5">★★★★★</option>
-                            <option value="4">★★★★☆</option>
-                            <option value="3">★★★☆☆</option>
-                            <option value="2">★★☆☆☆</option>
-                            <option value="1">★☆☆☆☆</option>
-                        </select>
-                        <textarea class="review-input" placeholder="Write your review here (optional)"></textarea>
-                        <button class="review-submit" data-lab-name="${lab.name}">Submit</button>
+                <div class="simple-tab-panes">
+                    <div id="info-tab-${safeLabName}" class="simple-tab-pane active">
+                        <div class="lab-services">
+                            <h4>Services Offered:</h4>
+                            <ul>
+                                ${lab.services.map(service => `<li>${service}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="lab-certifications">
+                            <h4>Accreditations & Certifications:</h4>
+                            ${certificationsHTML}
+                        </div>
+                    </div>
+                    
+                    <div id="write-tab-${safeLabName}" class="simple-tab-pane">
+                        <div class="review-form">
+                            <div class="rating-input">
+                                <label>Your Rating:</label>
+                                <div class="star-rating">
+                                    ${[5,4,3,2,1].map(rating => `
+                                        <input type="radio" id="star${rating}-${safeLabName}" name="rating-${safeLabName}" value="${rating}">
+                                        <label for="star${rating}-${safeLabName}">★</label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <textarea class="review-text" placeholder="Write your review here..."></textarea>
+                            <button class="review-submit" onclick="submitReview('${lab.name}')">Submit Review</button>
+                        </div>
                     </div>
                     
                     <div id="read-tab-${safeLabName}" class="simple-tab-pane">
-                        ${reviews.length > 0 ? 
-                            reviews.map(review => `
-                                <div class="simple-review">
-                                    <div class="simple-review-stars">${createStarRating(review.rating)}</div>
-                                    <div class="simple-review-text">${review.review ? review.review : 'No comment'}</div>
-                                    <div class="simple-review-date">${formatReviewDate(review.date)}</div>
+                        <div class="reviews-list">
+                            ${reviews.length > 0 ? reviews.map(review => `
+                                <div class="review-item">
+                                    <div class="review-header">
+                                        <div class="stars">${createStarRating(review.rating)}</div>
+                                        <span class="review-date">${new Date(review.date).toLocaleDateString()}</span>
+                                    </div>
+                                    <p class="review-text">${review.review || 'No review text provided'}</p>
                                 </div>
-                            `).join('') : 
-                            '<p class="no-reviews">No reviews yet. Be the first to review!</p>'
-                        }
+                            `).join('') : '<p class="no-reviews">No reviews yet</p>'}
+                        </div>
+                    </div>
+                    
+                    <div id="gallery-tab-${safeLabName}" class="simple-tab-pane">
+                        ${imageGalleryHTML}
                     </div>
                 </div>
             </div>
@@ -1667,5 +1754,26 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
 });
+
+// Add image modal functionality
+function openImageModal(imageUrl, caption) {
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <img src="${imageUrl}" alt="${caption}">
+            <p class="modal-caption">${caption}</p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking the close button or outside the image
+    modal.querySelector('.close-modal').onclick = () => modal.remove();
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+}
 
 
